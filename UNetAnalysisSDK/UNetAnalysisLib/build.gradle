@@ -1,0 +1,160 @@
+import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryPlugin
+import proguard.gradle.ProGuardTask
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 26
+
+    defaultConfig {
+        minSdkVersion 10
+        targetSdkVersion 26
+        versionCode 1
+        versionName "0.0.1"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            jniDebuggable true
+            buildConfigField('String', 'UCLOUD_API_BASE_URL', toJavaCodeString(UCLOUD_API_BASE_URL_TEST))
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            jniDebuggable false
+            buildConfigField('String', 'UCLOUD_API_BASE_URL', toJavaCodeString(UCLOUD_API_BASE_URL))
+        }
+    }
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.squareup.retrofit2:retrofit:2.4.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
+}
+
+
+class Utils {
+    static def r = new Random(System.currentTimeMillis())
+}
+
+String toJavaCodeString(String string) {
+    byte[] b = string.getBytes();
+    int c = b.length;
+    StringBuffer sb = new StringBuffer();
+
+    sb.append("new Object(){");
+    sb.append("int t;");
+    sb.append("public String toString() {");
+    sb.append("byte[] buf = new byte[");
+    sb.append(c);
+    sb.append("];");
+
+    for (int i = 0; i < c; ++i) {
+        int t = Utils.r.nextInt();
+        int f = Utils.r.nextInt(24) + 1;
+
+        t = (t & ~(0xff << f)) | (b[i] << f);
+
+        sb.append("t = ");
+        sb.append(t);
+        sb.append(";");
+        sb.append("buf[");
+        sb.append(i);
+        sb.append("] = (byte) (t >>> ");
+        sb.append(f);
+        sb.append(");");
+    }
+
+    sb.append("return new String(buf);");
+    sb.append("}}.toString()");
+
+    return sb.toString();
+}
+
+//task makeJar(type: Copy) {
+//    delete 'build/outputs/BSBandLib.jar'
+//    from('build/intermediates/bundles/release/')
+//    into('build/outputs/')
+//    include('classes.jar')
+//    rename('classes.jar', 'BSBandLib.jar')
+//}
+//
+//makeJar.dependsOn(build)
+
+task clearJar(type: Delete) {
+    delete 'build/libs/UNetAnalysisLib.jar'
+    delete 'build/libs/proguard-UNetAnalysisLib.jar'
+}
+
+task makeJar(dependsOn: ['clearJar', 'build', 'compileReleaseJavaWithJavac'], type: Jar) {
+    //指定生成的jar名
+//    appendix = "demo"
+    baseName = "UNetAnalysisLib"
+//    version = "1.0.0"
+//    classifier = "release"
+    //后缀名
+    extension = "jar"
+    //最终的 Jar 包名，如果没设置，默认为 [baseName]-[appendix]-[version]-[classifier].[extension]
+//    archiveName = "CCBWristBand_jd.jar"
+    //需打包的资源所在的路径集
+//    from(project.zipTree("libs/依赖的第三方库"))
+    //初始化资源路径集
+    from project.buildDir.absolutePath + "/intermediates/classes/release/"
+    //打包到jar后的目录结构
+//    into('cn/com/jd/')
+    //去除路径集下部分的资源
+//    exclude "**/BuildConfig.class"
+    exclude "**/R.class"
+    exclude "android/**"
+    exclude { it.name.startsWith('R$'); }
+    //只导入资源路径集下的部分资源
+    //    include "org/chaos/demo/jar/**/*.class"
+    //注: exclude include 支持可变长参数
+}
+
+task makeProguardJar(dependsOn: ['makeJar'], type: ProGuardTask) {
+    //Android 默认的 proguard 文件
+    configuration android.getDefaultProguardFile('proguard-android.txt')
+    //manifest 注册的组件对应的 proguard 文件
+    configuration project.buildDir.absolutePath + "/intermediates/proguard-rules/release/aapt_rules.txt"
+    configuration 'proguard-rules.pro'
+    String inJar = makeJar.archivePath.getAbsolutePath()
+    //输入 jar
+    injars inJar
+    //输出 jar
+    outjars inJar.substring(0, inJar.lastIndexOf(File.separator)) + "/proguard-${makeJar.archiveName}"
+    //设置不删除未引用的资源(类，方法等)
+    dontshrink
+    Plugin plugin = getPlugins().hasPlugin(AppPlugin) ?
+            getPlugins().findPlugin(AppPlugin) :
+            getPlugins().findPlugin(LibraryPlugin)
+    if (plugin != null) {
+        List<String> runtimeJarList
+        if (plugin.getMetaClass().getMetaMethod("getRuntimeJarList")) {
+            runtimeJarList = plugin.getRuntimeJarList()
+        } else if (android.getMetaClass().getMetaMethod("getBootClasspath")) {
+            runtimeJarList = android.getBootClasspath()
+        } else {
+            runtimeJarList = plugin.getBootClasspath()
+        }
+        for (String runtimeJar : runtimeJarList) {
+            //给 proguard 添加 runtime
+            libraryjars(runtimeJar)
+        }
+    }
+}
+
