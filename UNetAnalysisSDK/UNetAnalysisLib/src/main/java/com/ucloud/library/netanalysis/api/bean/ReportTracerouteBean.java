@@ -11,8 +11,8 @@ public class ReportTracerouteBean extends UCReportBean {
     @SerializedName("traceroute_data")
     private TracerouteDataBean tracerouteData;
     
-    public ReportTracerouteBean(String token, TracerouteDataBean tracerouteData) {
-        super(token, "traceroute");
+    public ReportTracerouteBean(TracerouteDataBean tracerouteData, ReportTagBean tag) {
+        super("traceroute", tag);
         this.tracerouteData = tracerouteData;
     }
     

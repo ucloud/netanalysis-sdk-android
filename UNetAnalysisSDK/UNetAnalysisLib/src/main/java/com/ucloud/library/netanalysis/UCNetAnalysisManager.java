@@ -18,12 +18,11 @@ import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
-import com.ucloud.library.netanalysis.api.UCApiManager;
 import com.ucloud.library.netanalysis.api.bean.IpInfoBean;
 import com.ucloud.library.netanalysis.api.bean.IpListBean;
 import com.ucloud.library.netanalysis.api.bean.MessageBean;
 import com.ucloud.library.netanalysis.api.bean.PingDataBean;
-import com.ucloud.library.netanalysis.api.bean.TestIp;
+import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
 import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
@@ -85,10 +84,13 @@ public class UCNetAnalysisManager {
     private IpInfoBean mCurSrcIpInfo = new IpInfoBean();
     private ReentrantLock mCacheLock, mCustomLock;
     
+    private String appSecret = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDi0zTKSGQMVuhlBfahzHyspPmL\naPZvEdusUq8o0vOPxnDQwSET52W2n9Fv+L/PTuzfKhaFpqvZf03TLu2IDheYOips\nBu7KB/lGJgoVE8hgn+G5V5JotUZ4/u30GGTV3MYMTyJHcgS3KDrx/mKCMd+1Gr9u\ng63WmbVoCKHjHgIccQIDAQAB";
+    private String appKey = "0387a8fb-10f3-5615-aaf5-32498c9336d3";
+    
     private UCNetAnalysisManager(Context context) {
         this.mContext = context;
         this.mSpHolder = UCSharedPreferenceHolder.createHolder(mContext);
-        this.mApiManager = new UCApiManager();
+        this.mApiManager = new UCApiManager(mContext, appKey, appSecret);
         this.mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         this.mCacheLock = new ReentrantLock();
         this.mCustomLock = new ReentrantLock();
@@ -452,14 +454,14 @@ public class UCNetAnalysisManager {
     }
     
     private void doGetPublicIpInfo() {
-        mApiManager.apiGetPublicIpInfo2(new Callback<TestIp>() {
+        mApiManager.apiGetPublicIpInfo(new Callback<PublicIpBean>() {
             @Override
-            public void onResponse(Call<TestIp> call, Response<TestIp> response) {
+            public void onResponse(Call<PublicIpBean> call, Response<PublicIpBean> response) {
                 if (response == null || response.body() == null)
                     return;
                 
                 JLog.D(TAG, "[ip info]:" + response.body());
-                mCurSrcIpInfo = response.body().copy2IpInfoBean();
+                mCurSrcIpInfo = response.body().getIpInfo();
                 doGetIpList();
                 synchronized (flag) {
                     flag = false;
@@ -467,7 +469,7 @@ public class UCNetAnalysisManager {
             }
             
             @Override
-            public void onFailure(Call<TestIp> call, Throwable t) {
+            public void onFailure(Call<PublicIpBean> call, Throwable t) {
                 synchronized (flag) {
                     flag = false;
                 }
@@ -479,6 +481,7 @@ public class UCNetAnalysisManager {
         mApiManager.apiGetPingList(new Callback<UCApiResponseBean<IpListBean>>() {
             @Override
             public void onResponse(Call<UCApiResponseBean<IpListBean>> call, Response<UCApiResponseBean<IpListBean>> response) {
+                JLog.E(TAG,"onResponse--->");
                 if (response == null || response.body() == null)
                     return;
                 
@@ -590,13 +593,14 @@ public class UCNetAnalysisManager {
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
                 Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, mCurSrcIpInfo);
+                JLog.D(TAG, "[response]:" + response.toString());
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;
             } catch (IOException e) {
-//                e.printStackTrace();
+                e.printStackTrace();
             } catch (IndexOutOfBoundsException e) {
-//                e.printStackTrace();
+                e.printStackTrace();
             }
         }
     }
@@ -664,13 +668,14 @@ public class UCNetAnalysisManager {
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
                 Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, mCurSrcIpInfo);
+                JLog.D(TAG, "[response]:" + response.toString());
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;
             } catch (IOException e) {
-//                e.printStackTrace();
+                e.printStackTrace();
             } catch (IndexOutOfBoundsException e) {
-//                e.printStackTrace();
+                e.printStackTrace();
             }
         }
     }

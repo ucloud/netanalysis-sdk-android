@@ -9,19 +9,19 @@ import com.google.gson.annotations.SerializedName;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UCApiBaseRequestBean {
-    @SerializedName("token")
-    protected String token;
+    @SerializedName("app_key")
+    protected String app_key;
     
-    public UCApiBaseRequestBean(String token) {
-        this.token = token;
+    public UCApiBaseRequestBean(String app_key) {
+        this.app_key = app_key;
     }
     
-    public String getToken() {
-        return token;
+    public String getApp_key() {
+        return app_key;
     }
     
-    public void setToken(String token) {
-        this.token = token;
+    public void setApp_key(String app_key) {
+        this.app_key = app_key;
     }
     
     @Override

@@ -11,8 +11,8 @@ public class ReportPingBean extends UCReportBean {
     @SerializedName("ping_data")
     private PingDataBean pingData;
     
-    public ReportPingBean(String token, PingDataBean pingData) {
-        super(token, "ping");
+    public ReportPingBean(PingDataBean pingData, ReportTagBean tag) {
+        super("ping", tag);
         this.pingData = pingData;
     }
     

@@ -1,5 +1,6 @@
 package com.ucloud.library.netanalysis.api.bean;
 
+import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -7,18 +8,18 @@ import com.google.gson.annotations.SerializedName;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class UCReportBean extends UCApiBaseRequestBean {
+public class UCReportBean {
     @SerializedName("action")
     protected String action;
     @SerializedName("timestamp")
     protected long timestamp;
-    @SerializedName("ip_info")
-    protected IpInfoBean ipInfo;
+    @SerializedName("tag")
+    protected ReportTagBean tag;
     
-    public UCReportBean(String token, String action) {
-        super(token);
+    public UCReportBean(String action, ReportTagBean tag) {
         this.action = action;
         this.timestamp = System.currentTimeMillis() / 1000;
+        this.tag = tag;
     }
     
     public String getAction() {
@@ -37,11 +38,16 @@ public class UCReportBean extends UCApiBaseRequestBean {
         this.timestamp = timestamp;
     }
     
-    public IpInfoBean getIpInfo() {
-        return ipInfo;
+    public ReportTagBean getTag() {
+        return tag;
     }
     
-    public void setIpInfo(IpInfoBean ipInfo) {
-        this.ipInfo = ipInfo;
+    public void setTag(ReportTagBean tag) {
+        this.tag = tag;
+    }
+    
+    @Override
+    public String toString() {
+        return new Gson().toJson(this);
     }
 }
