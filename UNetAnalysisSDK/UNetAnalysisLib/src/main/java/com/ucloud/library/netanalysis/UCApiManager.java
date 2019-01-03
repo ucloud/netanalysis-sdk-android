@@ -9,8 +9,9 @@ import com.ucloud.library.netanalysis.api.bean.MessageBean;
 import com.ucloud.library.netanalysis.api.bean.PingDataBean;
 import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
 import com.ucloud.library.netanalysis.api.bean.ReportPingBean;
-import com.ucloud.library.netanalysis.api.bean.ReportTagBean;
+import com.ucloud.library.netanalysis.api.bean.ReportPingTagBean;
 import com.ucloud.library.netanalysis.api.bean.ReportTracerouteBean;
+import com.ucloud.library.netanalysis.api.bean.ReportTracerouteTagBean;
 import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiBaseRequestBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
@@ -21,11 +22,13 @@ import com.ucloud.library.netanalysis.api.interceptor.BaseInterceptor;
 import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.HexFormatter;
+import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
@@ -113,8 +116,9 @@ class UCApiManager {
      * @throws IOException
      */
     public Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, IpInfoBean srcIpInfo) throws IOException {
-        ReportPingBean report = new ReportPingBean(pingData,
-                ReportTagBean.generate(appKey, context.getPackageName(), srcIpInfo));
+        ReportPingBean report = new ReportPingBean(appKey, pingData,
+                new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL())
+                , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
@@ -134,8 +138,9 @@ class UCApiManager {
      * @throws IOException
      */
     public Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, IpInfoBean srcIpInfo) throws IOException {
-        ReportTracerouteBean report = new ReportTracerouteBean(tracerouteData,
-                ReportTagBean.generate(appKey, context.getPackageName(), srcIpInfo));
+        ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
+                new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip())
+                , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
@@ -145,38 +150,26 @@ class UCApiManager {
         return call.execute();
     }
     
-    private static final int CRYPT_SRC_LIMIT = 117;
+    private static final int RSA_CRYPT_SRC_LIMIT = 128;
     
     private UCReportEncryptBean encryptReportData(UCReportBean reportBean) {
         if (reportBean == null)
             return null;
-        
-        String oriData = reportBean.toString();
-        if (TextUtils.isEmpty(oriData))
+    
+        String oriTag = reportBean.getTag();
+        String oriIpInfo = reportBean.getIpInfo();
+    
+        if (TextUtils.isEmpty(oriTag) || TextUtils.isEmpty(oriIpInfo))
             return null;
+    
+        UCReportEncryptBean encryptBean = new UCReportEncryptBean("");
         
-        UCReportEncryptBean encryptBean = new UCReportEncryptBean(appKey);
         try {
-            byte[] srcData = oriData.getBytes(Charset.forName("UTF-8"));
-            PublicKey publicKey = Encryptor.getPublicKey(Base64.decode(appSecret.getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
-            byte[] cryptArr = null;
-            int len = srcData.length;
-            for (int i = 0, count = (int) Math.ceil(len * 1.f / CRYPT_SRC_LIMIT); i < count; i++) {
-                int pkgLen = i == (count - 1) ? (len - i * CRYPT_SRC_LIMIT) : CRYPT_SRC_LIMIT;
-                byte[] src = new byte[pkgLen];
-                System.arraycopy(srcData, 0 * CRYPT_SRC_LIMIT, src, 0, pkgLen);
-                byte[] tmp = Encryptor.encryptRSA(src, publicKey);
-                if (cryptArr == null) {
-                    cryptArr = Arrays.copyOf(tmp, tmp.length);
-                } else {
-                    byte[] buff = new byte[cryptArr.length + tmp.length];
-                    System.arraycopy(cryptArr, 0, buff, 0, cryptArr.length);
-                    System.arraycopy(tmp, 0, buff, cryptArr.length, tmp.length);
-                    cryptArr = buff;
-                }
-            }
-            
-            encryptBean.setData(HexFormatter.formatByteArray2HexString(cryptArr, false));
+            reportBean.setTag(encryptRSA(reportBean.getTag(), appSecret));
+            reportBean.setIpInfo(encryptRSA(reportBean.getIpInfo(), appSecret));
+    
+            encryptBean.setData(Base64.encodeToString(reportBean.toString().getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
+            return encryptBean;
         } catch (NoSuchPaddingException e) {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
@@ -191,8 +184,32 @@ class UCApiManager {
             e.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
-        } finally {
-            return encryptBean;
         }
+    
+        return null;
+    }
+    
+    private String encryptRSA(String oriData, String key) throws InvalidKeySpecException, NoSuchAlgorithmException,
+            IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchPaddingException {
+        byte[] srcData = oriData.getBytes(Charset.forName("UTF-8"));
+        PublicKey publicKey = Encryptor.getPublicKey(key);
+        byte[] cryptArr = null;
+        int len = srcData.length;
+        for (int i = 0, count = (int) Math.ceil(len * 1.f / (RSA_CRYPT_SRC_LIMIT - 11)); i < count; i++) {
+            int pkgLen = i == (count - 1) ? (len - i * (RSA_CRYPT_SRC_LIMIT - 11)) : (RSA_CRYPT_SRC_LIMIT - 11);
+            byte[] src = new byte[pkgLen];
+            System.arraycopy(srcData, i * (RSA_CRYPT_SRC_LIMIT - 11), src, 0, pkgLen);
+            byte[] tmp = Encryptor.encryptRSA(src, publicKey);
+            if (cryptArr == null) {
+                cryptArr = Arrays.copyOf(tmp, tmp.length);
+            } else {
+                byte[] buff = new byte[cryptArr.length + tmp.length];
+                System.arraycopy(cryptArr, 0, buff, 0, cryptArr.length);
+                System.arraycopy(tmp, 0, buff, cryptArr.length, tmp.length);
+                cryptArr = buff;
+            }
+        }
+        
+        return HexFormatter.formatByteArray2HexString(cryptArr, false);
     }
 }

@@ -40,6 +40,7 @@ import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetStatus;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
+import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.IOException;
@@ -84,11 +85,14 @@ public class UCNetAnalysisManager {
     private IpInfoBean mCurSrcIpInfo = new IpInfoBean();
     private ReentrantLock mCacheLock, mCustomLock;
     
-    private String appSecret = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDi0zTKSGQMVuhlBfahzHyspPmL\naPZvEdusUq8o0vOPxnDQwSET52W2n9Fv+L/PTuzfKhaFpqvZf03TLu2IDheYOips\nBu7KB/lGJgoVE8hgn+G5V5JotUZ4/u30GGTV3MYMTyJHcgS3KDrx/mKCMd+1Gr9u\ng63WmbVoCKHjHgIccQIDAQAB";
-    private String appKey = "0387a8fb-10f3-5615-aaf5-32498c9336d3";
+    private String appSecret;
+    private String appKey;
     
-    private UCNetAnalysisManager(Context context) {
+    private UCNetAnalysisManager(Context context, String appKey, String appSecret) {
+        JLog.E(TAG, "[appKey]:" + appKey + "\n[appSecret]:" + appSecret);
         this.mContext = context;
+        this.appKey = appKey;
+        this.appSecret = appSecret;
         this.mSpHolder = UCSharedPreferenceHolder.createHolder(mContext);
         this.mApiManager = new UCApiManager(mContext, appKey, appSecret);
         this.mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
@@ -97,10 +101,18 @@ public class UCNetAnalysisManager {
         this.mCustomIps = new ArrayList<>();
     }
     
-    public synchronized static UCNetAnalysisManager createManager(@NonNull Context applicationContext) {
+    public synchronized static UCNetAnalysisManager createManager(@NonNull Context applicationContext, @NonNull String appKey, @NonNull String appSecret) {
+        if (TextUtils.isEmpty(appSecret))
+            throw new IllegalArgumentException("appKey is empty!");
+        if (TextUtils.isEmpty(appSecret))
+            throw new IllegalArgumentException("appSecret is empty!");
+        appSecret = Encryptor.filterRsaKey(appSecret);
+        if (TextUtils.isEmpty(appSecret))
+            throw new IllegalArgumentException("appSecret is illegal!");
+        
         synchronized (UCNetAnalysisManager.class) {
             destroy();
-            mInstance = new UCNetAnalysisManager(applicationContext);
+            mInstance = new UCNetAnalysisManager(applicationContext, appKey, appSecret);
         }
         
         return mInstance;
@@ -481,7 +493,7 @@ public class UCNetAnalysisManager {
         mApiManager.apiGetPingList(new Callback<UCApiResponseBean<IpListBean>>() {
             @Override
             public void onResponse(Call<UCApiResponseBean<IpListBean>> call, Response<UCApiResponseBean<IpListBean>> response) {
-                JLog.E(TAG,"onResponse--->");
+                JLog.E(TAG, "onResponse--->");
                 if (response == null || response.body() == null)
                     return;
                 
@@ -587,7 +599,6 @@ public class UCNetAnalysisManager {
         report.setDelay(result.averageDelay());
         report.setLoss(result.lossRate());
         report.setTTL(result.accessTTL());
-        report.setSrc_ip(mCurSrcIpInfo.getIp());
         report.setDst_ip(result.getTargetIp());
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
@@ -662,7 +673,6 @@ public class UCNetAnalysisManager {
             routeInfoBeans.add(route);
         }
         report.setRouteInfoList(routeInfoBeans);
-        report.setSrc_ip(mCurSrcIpInfo.getIp());
         report.setDst_ip(result.getTargetIp());
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {

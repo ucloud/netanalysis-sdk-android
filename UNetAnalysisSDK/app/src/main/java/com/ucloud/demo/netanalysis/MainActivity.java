@@ -41,11 +41,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private AppCompatEditText edit_host;
     private InputMethodManager imm;
     
+    private String appKey = "";
+    private String appSecret = "";
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext());
+        mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
         mUCNetAnalysisManager.setSdkListener(this);
         List<String> ips = new ArrayList<>();
         ips.add("www.baidu.com");
