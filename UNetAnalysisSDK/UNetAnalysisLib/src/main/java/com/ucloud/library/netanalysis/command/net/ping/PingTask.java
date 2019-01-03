@@ -87,7 +87,9 @@ final class PingTask extends UNetCommandTask<List<SinglePackagePingResult>> {
         if (matcherTargetId.find()) {
             singleRes.setStatus(UCommandStatus.CMD_STATUS_SUCCESSFUL);
             String time = getPingDelayFromMatcher(matcherTime(input));
-            singleRes.setDelaiy(Float.parseFloat(time));
+            singleRes.delaiy = Float.parseFloat(time);
+            String ttl = getPingTTLFromMatcher(matcherTTL(input));
+            singleRes.TTL = Integer.parseInt(ttl);
         } else {
             singleRes.setStatus(UCommandStatus.CMD_STATUS_FAILED);
             singleRes.delaiy = 0.f;

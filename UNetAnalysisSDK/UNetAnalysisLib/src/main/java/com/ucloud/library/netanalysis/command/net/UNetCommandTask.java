@@ -4,6 +4,7 @@ package com.ucloud.library.netanalysis.command.net;
 import android.text.TextUtils;
 
 import com.ucloud.library.netanalysis.command.UCommandTask;
+import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,6 +18,7 @@ public abstract class UNetCommandTask<T> extends UCommandTask<T> {
     protected static final String MATCH_TRACE_IP = "(?<=From )(?:[0-9]{1,3}\\.){3}[0-9]{1,3}";
     protected static final String MATCH_PING_IP = "(?<=from ).*(?=: icmp_seq=1 ttl=)";
     protected static final String MATCH_PING_TIME = "(?<=time=).*?ms";
+    protected static final String MATCH_PING_TTL = "(?<=ttl=).*(?= time)";
     protected static final String MATCH_TTL_EXCEEDED = "Time to live exceeded";
     
     protected Matcher matcherRouteNode(String str) {
@@ -26,6 +28,11 @@ public abstract class UNetCommandTask<T> extends UCommandTask<T> {
     
     protected Matcher matcherTime(String str) {
         Pattern patternTime = Pattern.compile(MATCH_PING_TIME);
+        return patternTime.matcher(str);
+    }
+    
+    protected Matcher matcherTTL(String str) {
+        Pattern patternTime = Pattern.compile(MATCH_PING_TTL);
         return patternTime.matcher(str);
     }
     
@@ -57,5 +64,14 @@ public abstract class UNetCommandTask<T> extends UCommandTask<T> {
         }
         
         return time.trim();
+    }
+    
+    protected String getPingTTLFromMatcher(Matcher matcher) {
+        String ttl = "0";
+        if (matcher.find()) {
+            ttl = matcher.group();
+        }
+        
+        return ttl.trim();
     }
 }
