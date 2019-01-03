@@ -24,9 +24,6 @@ The network detection is automatically triggered for following two situations:
 
 </br></br> 
 
-[TOC]
-
-
 ## 运行环境
 ### Android
 - Android系统版本：**2.3.3** (API 10)及以上
