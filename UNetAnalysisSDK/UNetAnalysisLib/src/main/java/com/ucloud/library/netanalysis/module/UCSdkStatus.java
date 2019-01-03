@@ -8,6 +8,8 @@ package com.ucloud.library.netanalysis.module;
 public enum UCSdkStatus {
     /** 注册模块成功 */
     REGISTER_SUCCESS,
-    /** APPID或者APPKEY无效 */
-    APPID_OR_APPKEY_ILLEGAL,
+    /**
+     * appKey或者appSecret无效
+     */
+    APPKEY_OR_APPSECRET_ILLEGAL,
 }

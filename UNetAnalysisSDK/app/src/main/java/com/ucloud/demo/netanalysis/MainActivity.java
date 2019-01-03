@@ -49,13 +49,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
-        mUCNetAnalysisManager.setSdkListener(this);
+        mUCNetAnalysisManager.register(this);
+        /**
+         * 可以配置自定义需要检测的域名或IP地址
+         */
         List<String> ips = new ArrayList<>();
-        ips.add("www.baidu.com");
-        ips.add("www.qq.com");
+        ips.add("www.ucloud.cn");
         ips.add("www.github.com");
+        ips.add("14.215.177.38");
         mUCNetAnalysisManager.setCustomIps(ips);
-        mUCNetAnalysisManager.register();
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         
         txt_result = findViewById(R.id.txt_result);

@@ -146,7 +146,16 @@ public class UCNetAnalysisManager {
         mSdkListener = listener;
     }
     
-    public void register() {
+    public void register(OnSdkListener listener) {
+        setSdkListener(listener);
+        
+        if (TextUtils.isEmpty(appSecret) || TextUtils.isEmpty(appSecret)) {
+            if (mSdkListener != null)
+                mSdkListener.onRegister(UCSdkStatus.APPKEY_OR_APPSECRET_ILLEGAL);
+            
+            return;
+        }
+        
         startMonitorNetStatus();
         if (mSdkListener != null)
             mSdkListener.onRegister(UCSdkStatus.REGISTER_SUCCESS);
