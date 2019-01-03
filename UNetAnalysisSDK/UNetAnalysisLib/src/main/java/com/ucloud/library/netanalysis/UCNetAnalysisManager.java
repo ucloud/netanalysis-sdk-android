@@ -502,7 +502,6 @@ public class UCNetAnalysisManager {
         mApiManager.apiGetPingList(new Callback<UCApiResponseBean<IpListBean>>() {
             @Override
             public void onResponse(Call<UCApiResponseBean<IpListBean>> call, Response<UCApiResponseBean<IpListBean>> response) {
-                JLog.E(TAG, "onResponse--->");
                 if (response == null || response.body() == null)
                     return;
                 
