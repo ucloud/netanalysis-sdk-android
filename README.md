@@ -20,7 +20,7 @@ The network detection is automatically triggered for following two situations:
 
 </br></br>   
 ## 版本
-- Current Version：0.0.1
+- Current Version：0.0.2
 
 </br></br> 
 
@@ -29,7 +29,7 @@ The network detection is automatically triggered for following two situations:
 
 ## 运行环境
 ### Android
-- Android系统版本：**==2.3.3==** (API 10)及以上
+- Android系统版本：**2.3.3** (API 10)及以上
 
 
 </br></br>
@@ -70,7 +70,7 @@ NetAnalysis SDK依赖于Gson。
 ```
 
 </br></br>
-#### 1、在==自定义Application类==或者==主Activity类==的onCreate中构建UCNetAnalysisManager，并注册
+#### 1、在**自定义Application类**或者**主Activity类**的onCreate中构建UCNetAnalysisManager，并注册
 ``` java
 // 使用Application Context 构建UCNetAnalysisManager实例
 UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext());
@@ -147,10 +147,11 @@ public static UCNetAnalysisManager getManager()
 
 #### 注册UCNetAnalysisManager模块
 ``` java
-public void register()
+public void register(OnSdkListener listener)
 ```
 
-- **param**: -
+- **param**: 
+    - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
 - **return**: -
 
 #### 设置Sdk回调接口
@@ -333,3 +334,12 @@ public enum UCNetStatus {
     NET_STATUS_UNKNOW,
 }
 ```
+
+## License
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
+
+## 作者
+- [Joshua Yin](https://github.com/joshuayin)
+
+## 组织
+- [UCloud](https://github.com/ucloud)
