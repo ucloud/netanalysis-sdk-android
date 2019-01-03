@@ -10,18 +10,18 @@ import com.google.gson.annotations.SerializedName;
  */
 public class UCApiBaseRequestBean {
     @SerializedName("app_key")
-    protected String app_key;
+    protected String appKey;
     
-    public UCApiBaseRequestBean(String app_key) {
-        this.app_key = app_key;
+    public UCApiBaseRequestBean(String appKey) {
+        this.appKey = appKey;
     }
     
-    public String getApp_key() {
-        return app_key;
+    public String getAppKey() {
+        return appKey;
     }
     
-    public void setApp_key(String app_key) {
-        this.app_key = app_key;
+    public void setAppKey(String appKey) {
+        this.appKey = appKey;
     }
     
     @Override

@@ -12,7 +12,6 @@ public class UCReportEncryptBean {
     @SerializedName("data")
     protected String data;
     
-    
     public UCReportEncryptBean(String data) {
         this.data = data;
     }

@@ -7,25 +7,14 @@ import com.google.gson.annotations.SerializedName;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class ReportTagBean extends IpInfoBean {
-    @SerializedName("app_key")
-    private String appKey;
+public class ReportTagBean {
     @SerializedName("app_id")
-    private String appId;
+    protected String appId;
     @SerializedName("platform")
-    private String platform = "Android";
+    protected int platform = 0;
     
-    private ReportTagBean(String appKey, String appId) {
-        this.appKey = appKey;
+    protected ReportTagBean(String appId) {
         this.appId = appId;
-    }
-    
-    public String getAppKey() {
-        return appKey;
-    }
-    
-    public void setAppKey(String appKey) {
-        this.appKey = appKey;
     }
     
     public String getAppId() {
@@ -36,18 +25,15 @@ public class ReportTagBean extends IpInfoBean {
         this.appId = appId;
     }
     
-    public String getPlatform() {
+    public int getPlatform() {
         return platform;
     }
     
-    public void setPlatform(String platform) {
-        this.platform = platform;
-    }
-    
-    public static ReportTagBean generate(String appKey, String appId, IpInfoBean ipInfo) {
-        ReportTagBean tagBean = new ReportTagBean(appKey, appId);
-        tagBean.copy(ipInfo);
-        return tagBean;
+    protected String makeReportString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append(String.format("app_id=%s", appId));
+        sb.append(String.format(",platform=%d", platform));
+        return sb.toString();
     }
     
 }

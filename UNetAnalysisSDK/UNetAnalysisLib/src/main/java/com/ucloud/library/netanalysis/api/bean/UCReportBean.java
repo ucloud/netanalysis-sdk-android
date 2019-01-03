@@ -1,6 +1,5 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -8,19 +7,24 @@ import com.google.gson.annotations.SerializedName;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class UCReportBean {
+public class UCReportBean extends UCApiBaseRequestBean {
     @SerializedName("action")
     protected String action;
     @SerializedName("timestamp")
     protected long timestamp;
     @SerializedName("tag")
-    protected ReportTagBean tag;
+    protected String tag;
+    @SerializedName("ip_info")
+    protected String ipInfo;
     
-    public UCReportBean(String action, ReportTagBean tag) {
+    public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo) {
+        super(appKey);
         this.action = action;
         this.timestamp = System.currentTimeMillis() / 1000;
-        this.tag = tag;
+        this.tag = tag.makeReportString();
+        this.ipInfo = ipInfo.makeReportString();
     }
+    
     
     public String getAction() {
         return action;
@@ -38,16 +42,29 @@ public class UCReportBean {
         this.timestamp = timestamp;
     }
     
-    public ReportTagBean getTag() {
+    public String getTag() {
         return tag;
     }
     
     public void setTag(ReportTagBean tag) {
+        if (tag != null)
+            this.tag = tag.makeReportString();
+    }
+    
+    public void setTag(String tag) {
         this.tag = tag;
     }
     
-    @Override
-    public String toString() {
-        return new Gson().toJson(this);
+    public String getIpInfo() {
+        return ipInfo;
+    }
+    
+    public void setIpInfo(IpInfoBean ipInfo) {
+        if (ipInfo != null)
+            this.ipInfo = ipInfo.makeReportString();
+    }
+    
+    public void setIpInfo(String ipInfo) {
+        this.ipInfo = ipInfo;
     }
 }

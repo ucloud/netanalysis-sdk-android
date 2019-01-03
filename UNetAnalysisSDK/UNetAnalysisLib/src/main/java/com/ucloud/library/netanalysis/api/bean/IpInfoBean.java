@@ -130,21 +130,17 @@ public class IpInfoBean {
         this.utc_offset = utc_offset;
     }
     
-    protected void copy(IpInfoBean ipInfo) {
-        if (ipInfo == null)
-            return;
-        ip = ipInfo.ip;
-        city_name = ipInfo.city_name;
-        continent_code = ipInfo.continent_code;
-        country_code = ipInfo.country_code;
-        country_name = ipInfo.country_name;
-        isp_domain = ipInfo.isp_domain;
-        latitude = ipInfo.latitude;
-        longitude = ipInfo.longitude;
-        owner_domain = ipInfo.owner_domain;
-        region_name = ipInfo.region_name;
-        timezone = ipInfo.timezone;
-        utc_offset = ipInfo.utc_offset;
+    protected String makeReportString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append(String.format("ip=%s", ip));
+        sb.append(String.format(",region=%s", region_name));
+        sb.append(String.format(",country=%s", country_name));
+        sb.append(String.format(",city=%s", city_name));
+        sb.append(String.format(",isp=%s", isp_domain));
+        sb.append(String.format(",lat=%s", longitude));
+        sb.append(String.format(",lat=%s", latitude));
+        sb.append(String.format(",owner=%s", owner_domain));
+        return sb.toString();
     }
     
     @Override
