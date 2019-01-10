@@ -1,24 +1,5 @@
 # UCloud NetAnalysis SDK for Android
-## 关于
-### CN:
-这个开源库允许您将UCloud全球网络分析服务集成到您的Android应用程序中，它将检测和报告应用程序终端用户和服务部署地点之间的网络可用性。
 
-应用程序开发人员还可以使用API配置您希望在应用程序用户之间检测和分析的服务位置(IP地址)。UCloud IDC中心已经被设置为默认位置。
-
-以下两种情况会自动触发网络检测:
-- 当应用程序启动时，从终端用户发出Ping命令并跟踪服务器
-- 当网络环境在WIFI和蜂窝之间发生变化时，Ping服务器
-
-### EN:
-This open-source library allows you to integrate UCloud Global network analysis service into your Android app, which will detect and report the network availability between app end-user and locations where the service has been deployed. 
-
-API is available as well for app developer to configure the service location (IP Address)  you would like to detect and analysis between your app users. UCloud IDC centers have been set as default locations.
-
-The network detection is automatically triggered for following two situations:
-- Ping and Tracerout the server from end-user when app initial 
-- Ping the server when the network environment change between WIFI and Cellular
-
-</br></br>   
 ## 版本
 - Current Version：0.0.2
 
