@@ -33,7 +33,7 @@ The network detection is automatically triggered for following two situations:
 ## 使用
 ### Dependencies
 NetAnalysis SDK依赖于Gson。
-- 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在a™pp模块的build.gradle的dependencies中建立依赖
+- 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在app模块的build.gradle的dependencies中建立依赖
 - 在app模块的build.gradle的dependencies中添加
 
     ``` java
