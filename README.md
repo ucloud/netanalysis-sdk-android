@@ -44,6 +44,7 @@ NetAnalysis SDK依赖于Gson。
     ```
 
 </br>
+
 ### 项目信息配置
 将你在UCloud平台注册的AppId和AppKey，配置在AndroidManifest.xml的<Application></Application>内
 ``` xml
@@ -56,6 +57,7 @@ NetAnalysis SDK依赖于Gson。
 ```
 
 </br>
+
 ### 系统权限设置
 以下是NetAnalysis SDK所需要的Android权限，请确保您的AndroidManifest.xml文件中已经配置了这些权限，否则，SDK将无法正常工作。
 ``` xml
@@ -67,6 +69,8 @@ NetAnalysis SDK依赖于Gson。
 ```
 
 </br></br>
+
+### 快速接入
 #### 1、在**自定义Application类**或者**主Activity类**的onCreate中构建UCNetAnalysisManager，并注册
 ``` java
 // 使用Application Context 构建UCNetAnalysisManager实例
@@ -121,6 +125,7 @@ protected void onDestroy(){
 ```
 
 </br></br>
+
 ## 类
 
 ### UCNetAnalysisManager
