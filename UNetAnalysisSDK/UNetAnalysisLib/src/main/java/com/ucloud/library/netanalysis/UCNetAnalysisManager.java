@@ -338,40 +338,6 @@ public class UCNetAnalysisManager {
         @Override
         public void onSignalStrengthsChanged(SignalStrength signalStrength) {
             mMobileSignalStrength = signalStrength;
-
-//            String signalInfo = mMobileSignalStrength.toString();
-//            String[] params = signalInfo.split(" ");
-//            JLog.T(TAG, "[mGsmSignalStrength]:" + params[1]);
-//            JLog.T(TAG, "[mGsmBitErrorRate]:" + params[2]);
-//            JLog.T(TAG, "[mCdmaDbm]:" + params[3]);
-//            JLog.T(TAG, "[mCdmaEcio]:" + params[4]);
-//            JLog.T(TAG, "[mEvdoDbm]:" + params[5]);
-//            JLog.T(TAG, "[mEvdoEcio]:" + params[6]);
-//            JLog.T(TAG, "[mEvdoSnr]:" + params[7]);
-//            JLog.T(TAG, "[mLteSignalStrength]:" + params[8]);
-//            JLog.T(TAG, "[mLteRsrp]:" + params[9]);
-//            JLog.T(TAG, "[mLteRsrq]:" + params[10]);
-//            JLog.T(TAG, "[mLteRssnr]:" + params[11]);
-//            JLog.T(TAG, "[mLteCqi]:" + params[12]);
-//            JLog.T(TAG, "[mLteRsrpBoost]:" + params[13]);
-//            JLog.T(TAG, "[mTdScdmaRscp]:" + params[14]);
-//            JLog.T(TAG, "[isGsm]:" + params[15] + " " + params[16]);
-//
-//            int strength = 0;
-//            if (mMobileSignalStrength.isGsm()) {
-//                if (mMobileSignalStrength.getGsmSignalStrength() != 99) {
-//                    JLog.E(TAG, "11111111");
-//                    strength = mMobileSignalStrength.getGsmSignalStrength() * 2 - 113;
-//                } else {
-//                    JLog.E(TAG, "22222222");
-//                    strength = mMobileSignalStrength.getGsmSignalStrength();
-//                }
-//            } else {
-//                JLog.E(TAG, "333333333");
-//                strength = mMobileSignalStrength.getCdmaDbm();
-//            }
-//
-//            JLog.T(TAG, "[strength]:" + strength + " dbm");
         }
     };
     
