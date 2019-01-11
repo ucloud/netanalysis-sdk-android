@@ -11,7 +11,7 @@ android {
         minSdkVersion 10
         targetSdkVersion 26
         versionCode 1
-        versionName "0.0.1"
+        versionName "1.0.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -21,13 +21,15 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             jniDebuggable true
-            buildConfigField('String', 'UCLOUD_API_BASE_URL', toJavaCodeString(UCLOUD_API_BASE_URL_TEST))
+            buildConfigField('String', 'UCLOUD_API_IPIP', toJavaCodeString(UCLOUD_API_IPIP))
+            buildConfigField('String', 'UCLOUD_API_IP_LIST', toJavaCodeString(UCLOUD_API_IP_LIST))
         }
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             jniDebuggable false
-            buildConfigField('String', 'UCLOUD_API_BASE_URL', toJavaCodeString(UCLOUD_API_BASE_URL))
+            buildConfigField('String', 'UCLOUD_API_IPIP', toJavaCodeString(UCLOUD_API_IPIP))
+            buildConfigField('String', 'UCLOUD_API_IP_LIST', toJavaCodeString(UCLOUD_API_IP_LIST))
         }
     }
     lintOptions {

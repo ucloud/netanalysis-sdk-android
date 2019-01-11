@@ -9,8 +9,18 @@ import com.google.gson.annotations.SerializedName;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class PublicIpBean {
-    @SerializedName("ip_info")
+    @SerializedName("ret")
+    private String ret;
+    @SerializedName("data")
     private IpInfoBean ipInfo;
+    
+    public String getRet() {
+        return ret;
+    }
+    
+    public void setRet(String ret) {
+        this.ret = ret;
+    }
     
     public IpInfoBean getIpInfo() {
         return ipInfo;

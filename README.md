@@ -1,42 +1,20 @@
 # UCloud NetAnalysis SDK for Android
-## 关于
-### CN:
-这个开源库允许您将UCloud全球网络分析服务集成到您的Android应用程序中，它将检测和报告应用程序终端用户和服务部署地点之间的网络可用性。
 
-应用程序开发人员还可以使用API配置您希望在应用程序用户之间检测和分析的服务位置(IP地址)。UCloud IDC中心已经被设置为默认位置。
-
-以下两种情况会自动触发网络检测:
-- 当应用程序启动时，从终端用户发出Ping命令并跟踪服务器
-- 当网络环境在WIFI和蜂窝之间发生变化时，Ping服务器
-
-### EN:
-This open-source library allows you to integrate UCloud Global network analysis service into your Android app, which will detect and report the network availability between app end-user and locations where the service has been deployed. 
-
-API is available as well for app developer to configure the service location (IP Address)  you would like to detect and analysis between your app users. UCloud IDC centers have been set as default locations.
-
-The network detection is automatically triggered for following two situations:
-- Ping and Tracerout the server from end-user when app initial 
-- Ping the server when the network environment change between WIFI and Cellular
-
-</br></br>   
 ## 版本
-- Current Version：0.0.1
+- Current Version：1.0.0
 
 </br></br> 
 
-[TOC]
-
-
 ## 运行环境
 ### Android
-- Android系统版本：**==2.3.3==** (API 10)及以上
+- Android系统版本：**2.3.3** (API 10)及以上
 
 
 </br></br>
 ## 使用
 ### Dependencies
 NetAnalysis SDK依赖于Gson。
-- 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在a™pp模块的build.gradle的dependencies中建立依赖
+- 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在app模块的build.gradle的dependencies中建立依赖
 - 在app模块的build.gradle的dependencies中添加
 
     ``` java
@@ -47,6 +25,7 @@ NetAnalysis SDK依赖于Gson。
     ```
 
 </br>
+
 ### 项目信息配置
 将你在UCloud平台注册的AppId和AppKey，配置在AndroidManifest.xml的<Application></Application>内
 ``` xml
@@ -59,6 +38,7 @@ NetAnalysis SDK依赖于Gson。
 ```
 
 </br>
+
 ### 系统权限设置
 以下是NetAnalysis SDK所需要的Android权限，请确保您的AndroidManifest.xml文件中已经配置了这些权限，否则，SDK将无法正常工作。
 ``` xml
@@ -70,7 +50,9 @@ NetAnalysis SDK依赖于Gson。
 ```
 
 </br></br>
-#### 1、在==自定义Application类==或者==主Activity类==的onCreate中构建UCNetAnalysisManager，并注册
+
+### 快速接入
+#### 1、在**自定义Application类**或者**主Activity类**的onCreate中构建UCNetAnalysisManager，并注册
 ``` java
 // 使用Application Context 构建UCNetAnalysisManager实例
 UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext());
@@ -124,6 +106,7 @@ protected void onDestroy(){
 ```
 
 </br></br>
+
 ## 类
 
 ### UCNetAnalysisManager
@@ -147,10 +130,11 @@ public static UCNetAnalysisManager getManager()
 
 #### 注册UCNetAnalysisManager模块
 ``` java
-public void register()
+public void register(OnSdkListener listener)
 ```
 
-- **param**: -
+- **param**: 
+    - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
 - **return**: -
 
 #### 设置Sdk回调接口
@@ -333,3 +317,12 @@ public enum UCNetStatus {
     NET_STATUS_UNKNOW,
 }
 ```
+
+## License
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
+
+## 作者
+- [Joshua Yin](https://github.com/joshuayin)
+
+## 组织
+- [UCloud](https://github.com/ucloud)

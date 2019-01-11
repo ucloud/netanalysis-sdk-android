@@ -1,0 +1,215 @@
+package com.ucloud.library.netanalysis;
+
+import android.content.Context;
+import android.text.TextUtils;
+import android.util.Base64;
+
+import com.ucloud.library.netanalysis.api.bean.IpInfoBean;
+import com.ucloud.library.netanalysis.api.bean.MessageBean;
+import com.ucloud.library.netanalysis.api.bean.PingDataBean;
+import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
+import com.ucloud.library.netanalysis.api.bean.ReportPingBean;
+import com.ucloud.library.netanalysis.api.bean.ReportPingTagBean;
+import com.ucloud.library.netanalysis.api.bean.ReportTracerouteBean;
+import com.ucloud.library.netanalysis.api.bean.ReportTracerouteTagBean;
+import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
+import com.ucloud.library.netanalysis.api.bean.UCApiBaseRequestBean;
+import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
+import com.ucloud.library.netanalysis.api.bean.IpListBean;
+import com.ucloud.library.netanalysis.api.bean.UCReportBean;
+import com.ucloud.library.netanalysis.api.bean.UCReportEncryptBean;
+import com.ucloud.library.netanalysis.api.interceptor.BaseInterceptor;
+import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
+import com.ucloud.library.netanalysis.utils.Encryptor;
+import com.ucloud.library.netanalysis.utils.HexFormatter;
+import com.ucloud.library.netanalysis.utils.JLog;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+/**
+ * Created by joshua on 2018/10/8 11:16.
+ * Company: UCloud
+ * E-mail: joshua.yin@ucloud.cn
+ */
+class UCApiManager {
+    private final String TAG = this.getClass().getSimpleName();
+    
+    public static final long DEFAULT_CONNECT_TIMEOUT = 5 * 1000;
+    public static final long DEFAULT_WRITE_TIMEOUT = 10 * 1000;
+    public static final long DEFAULT_READ_TIMEOUT = 10 * 1000;
+    
+    private Context context;
+    private OkHttpClient okHttpClient;
+    private Retrofit retrofit;
+    private NetAnalysisApiService apiService;
+    
+    private String appKey;
+    private String appSecret;
+    
+    protected UCApiManager(Context context, String appKey, String appSecret) {
+        this.context = context;
+        this.appKey = appKey;
+        this.appSecret = appSecret;
+        
+        okHttpClient = new OkHttpClient.Builder()
+                .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
+                .addInterceptor(new BaseInterceptor())
+                .build();
+        
+        retrofit = new Retrofit.Builder()
+                .client(okHttpClient)
+                .baseUrl(BuildConfig.UCLOUD_API_IP_LIST)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        
+        apiService = retrofit.create(NetAnalysisApiService.class);
+    }
+    
+    /**
+     * 获取移动端公网IP信息
+     *
+     * @param callback 回调接口 {@link PublicIpBean}
+     */
+    public void apiGetPublicIpInfo(Callback<PublicIpBean> callback) {
+        Call<PublicIpBean> call = apiService.getPublicIpInfo(BuildConfig.UCLOUD_API_IPIP);
+        call.enqueue(callback);
+    }
+    
+    /**
+     * 获取UCloud需要监测的IP列表，以及上报服务器列表
+     *
+     * @param callback 回调接口 {@link UCApiResponseBean}<{@link IpListBean}>
+     */
+    public void apiGetPingList(Callback<UCApiResponseBean<IpListBean>> callback) {
+        Call<UCApiResponseBean<IpListBean>> call = apiService.getPingList(new UCApiBaseRequestBean(appKey));
+        call.enqueue(callback);
+    }
+    
+    /**
+     * 上报Ping的结果
+     *
+     * @param reportAddress 上报接口地址
+     * @param pingData      ping结果数据 {@link PingDataBean}
+     * @param srcIpInfo     本地IP信息 {@link IpInfoBean}
+     * @return response返回     {@link UCApiResponseBean}<{@link MessageBean}>
+     * @throws IOException
+     */
+    public Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, IpInfoBean srcIpInfo) throws IOException {
+        ReportPingBean report = new ReportPingBean(appKey, pingData,
+                new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL())
+                , srcIpInfo);
+        
+        UCReportEncryptBean reportEncryptBean = encryptReportData(report);
+        if (reportEncryptBean == null)
+            return null;
+        
+        Call<UCApiResponseBean<MessageBean>> call = apiService.reportPing(reportAddress, reportEncryptBean);
+        return call.execute();
+    }
+    
+    /**
+     * 上报Traceroute的结果
+     *
+     * @param reportAddress  上报接口地址
+     * @param tracerouteData traceroute结果数据 {@link TracerouteDataBean}
+     * @param srcIpInfo      本地IP信息 {@link IpInfoBean}
+     * @return response返回  {@link UCApiResponseBean}<{@link MessageBean}>
+     * @throws IOException
+     */
+    public Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, IpInfoBean srcIpInfo) throws IOException {
+        ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
+                new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip())
+                , srcIpInfo);
+        
+        UCReportEncryptBean reportEncryptBean = encryptReportData(report);
+        if (reportEncryptBean == null)
+            return null;
+        
+        Call<UCApiResponseBean<MessageBean>> call = apiService.reportTraceroute(reportAddress, reportEncryptBean);
+        return call.execute();
+    }
+    
+    private static final int RSA_CRYPT_SRC_LIMIT = 128;
+    
+    private UCReportEncryptBean encryptReportData(UCReportBean reportBean) {
+        if (reportBean == null)
+            return null;
+    
+        String oriTag = reportBean.getTag();
+        String oriIpInfo = reportBean.getIpInfo();
+    
+        if (TextUtils.isEmpty(oriTag) || TextUtils.isEmpty(oriIpInfo))
+            return null;
+    
+        UCReportEncryptBean encryptBean = new UCReportEncryptBean("");
+        
+        try {
+            reportBean.setTag(encryptRSA(reportBean.getTag(), appSecret));
+            reportBean.setIpInfo(encryptRSA(reportBean.getIpInfo(), appSecret));
+    
+            encryptBean.setData(Base64.encodeToString(reportBean.toString().getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
+            return encryptBean;
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
+    
+        return null;
+    }
+    
+    private String encryptRSA(String oriData, String key) throws InvalidKeySpecException, NoSuchAlgorithmException,
+            IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchPaddingException {
+        byte[] srcData = oriData.getBytes(Charset.forName("UTF-8"));
+        PublicKey publicKey = Encryptor.getPublicKey(key);
+        byte[] cryptArr = null;
+        int len = srcData.length;
+        for (int i = 0, count = (int) Math.ceil(len * 1.f / (RSA_CRYPT_SRC_LIMIT - 11)); i < count; i++) {
+            int pkgLen = i == (count - 1) ? (len - i * (RSA_CRYPT_SRC_LIMIT - 11)) : (RSA_CRYPT_SRC_LIMIT - 11);
+            byte[] src = new byte[pkgLen];
+            System.arraycopy(srcData, i * (RSA_CRYPT_SRC_LIMIT - 11), src, 0, pkgLen);
+            byte[] tmp = Encryptor.encryptRSA(src, publicKey);
+            if (cryptArr == null) {
+                cryptArr = Arrays.copyOf(tmp, tmp.length);
+            } else {
+                byte[] buff = new byte[cryptArr.length + tmp.length];
+                System.arraycopy(cryptArr, 0, buff, 0, cryptArr.length);
+                System.arraycopy(tmp, 0, buff, cryptArr.length, tmp.length);
+                cryptArr = buff;
+            }
+        }
+        
+        return HexFormatter.formatByteArray2HexString(cryptArr, false);
+    }
+}

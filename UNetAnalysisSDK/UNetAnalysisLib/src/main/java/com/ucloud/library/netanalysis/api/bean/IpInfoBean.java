@@ -9,43 +9,30 @@ import com.google.gson.annotations.SerializedName;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class IpInfoBean {
-    /**
-     * city : shanghai
-     * country : china
-     * ip : 192.168.152.12
-     * location : string
-     * org : string
-     * region : shanghai
-     */
-    
-    @SerializedName("city")
-    private String city;
-    @SerializedName("country")
-    private String country;
-    @SerializedName("ip")
+    @SerializedName("addr")
     private String ip;
-    @SerializedName("location")
-    private String location;
-    @SerializedName("org")
-    private String org;
-    @SerializedName("region")
-    private String region;
-    
-    public String getCity() {
-        return city;
-    }
-    
-    public void setCity(String city) {
-        this.city = city;
-    }
-    
-    public String getCountry() {
-        return country;
-    }
-    
-    public void setCountry(String country) {
-        this.country = country;
-    }
+    @SerializedName("city_name")
+    private String city_name;
+    @SerializedName("continent_code")
+    private String continent_code;
+    @SerializedName("country_code")
+    private String country_code;
+    @SerializedName("country_name")
+    private String country_name;
+    @SerializedName("isp_domain")
+    private String isp_domain;
+    @SerializedName("latitude")
+    private String latitude;
+    @SerializedName("longitude")
+    private String longitude;
+    @SerializedName("owner_domain")
+    private String owner_domain;
+    @SerializedName("region_name")
+    private String region_name;
+    @SerializedName("timezone")
+    private String timezone;
+    @SerializedName("utc_offset")
+    private String utc_offset;
     
     public String getIp() {
         return ip;
@@ -55,28 +42,105 @@ public class IpInfoBean {
         this.ip = ip;
     }
     
-    public String getLocation() {
-        return location;
+    public String getCity_name() {
+        return city_name;
     }
     
-    public void setLocation(String location) {
-        this.location = location;
+    public void setCity_name(String city_name) {
+        this.city_name = city_name;
     }
     
-    public String getOrg() {
-        return org;
+    public String getContinent_code() {
+        return continent_code;
     }
     
-    public void setOrg(String org) {
-        this.org = org;
+    public void setContinent_code(String continent_code) {
+        this.continent_code = continent_code;
     }
     
-    public String getRegion() {
-        return region;
+    public String getCountry_code() {
+        return country_code;
     }
     
-    public void setRegion(String region) {
-        this.region = region;
+    public void setCountry_code(String country_code) {
+        this.country_code = country_code;
+    }
+    
+    public String getCountry_name() {
+        return country_name;
+    }
+    
+    public void setCountry_name(String country_name) {
+        this.country_name = country_name;
+    }
+    
+    public String getIsp_domain() {
+        return isp_domain;
+    }
+    
+    public void setIsp_domain(String isp_domain) {
+        this.isp_domain = isp_domain;
+    }
+    
+    public String getLatitude() {
+        return latitude;
+    }
+    
+    public void setLatitude(String latitude) {
+        this.latitude = latitude;
+    }
+    
+    public String getLongitude() {
+        return longitude;
+    }
+    
+    public void setLongitude(String longitude) {
+        this.longitude = longitude;
+    }
+    
+    public String getOwner_domain() {
+        return owner_domain;
+    }
+    
+    public void setOwner_domain(String owner_domain) {
+        this.owner_domain = owner_domain;
+    }
+    
+    public String getRegion_name() {
+        return region_name;
+    }
+    
+    public void setRegion_name(String region_name) {
+        this.region_name = region_name;
+    }
+    
+    public String getTimezone() {
+        return timezone;
+    }
+    
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+    
+    public String getUtc_offset() {
+        return utc_offset;
+    }
+    
+    public void setUtc_offset(String utc_offset) {
+        this.utc_offset = utc_offset;
+    }
+    
+    protected String makeReportString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append(String.format("ip=%s", ip));
+        sb.append(String.format(",region=%s", region_name));
+        sb.append(String.format(",country=%s", country_name));
+        sb.append(String.format(",city=%s", city_name));
+        sb.append(String.format(",isp=%s", isp_domain));
+        sb.append(String.format(",lat=%s", longitude));
+        sb.append(String.format(",lat=%s", latitude));
+        sb.append(String.format(",owner=%s", owner_domain));
+        return sb.toString();
     }
     
     @Override

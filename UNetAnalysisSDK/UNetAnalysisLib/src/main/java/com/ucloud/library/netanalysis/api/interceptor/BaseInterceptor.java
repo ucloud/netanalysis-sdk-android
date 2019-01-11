@@ -49,6 +49,8 @@ public class BaseInterceptor implements Interceptor {
         //打印请求耗时
         JLog.V(TAG, "[耗时]:" + tookMs + "ms");
         //使用response获得headers(),可以更新本地Cookie。
+        JLog.T(TAG, "[response-code]:" + response.code());
+        JLog.T(TAG, "[response-headers]:" + response.headers().toString());
         
         //获得返回的body，注意此处不要使用responseBody.string()获取返回数据，原因在于这个方法会消耗返回结果的数据(buffer)
         ResponseBody responseBody = response.body();
