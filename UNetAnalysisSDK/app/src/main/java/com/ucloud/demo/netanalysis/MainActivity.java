@@ -18,6 +18,8 @@ import android.widget.Toast;
 import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
+import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
+import com.ucloud.library.netanalysis.module.OptionalData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
@@ -41,15 +43,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private AppCompatEditText edit_host;
     private InputMethodManager imm;
     
-    private String appKey = "";
-    private String appSecret = "";
+    private String appKey = UCloud为您的APP分配的APP_KEY;
+    private String appSecret = UCloud为您的APP分配的APP_SECRET;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
-        mUCNetAnalysisManager.register(this);
+        OptionalData.OptionalParam[] params = new OptionalData.OptionalParam[3];
+        OptionalData data = null;
+        params[0] = new OptionalData.OptionalParam("optKey 1", "optValue 1");
+        params[2] = new OptionalData.OptionalParam("optKey2", "optValue 2");
+        try {
+            data = new OptionalData(params);
+        } catch (UCParamVerifyException e) {
+            e.printStackTrace();
+        }
+        mUCNetAnalysisManager.register(this, data);
         /**
          * 可以配置自定义需要检测的域名或IP地址
          */

@@ -36,6 +36,7 @@ import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteCallback;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteNodeResult;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteResult;
 import com.ucloud.library.netanalysis.module.IpReport;
+import com.ucloud.library.netanalysis.module.OptionalData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetStatus;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
@@ -64,6 +65,8 @@ import retrofit2.Response;
 public class UCNetAnalysisManager {
     private final String TAG = getClass().getSimpleName();
     
+    public static final String SDK_VERSION = String.format("Android/%s.%d", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE);
+    
     private final int MAX_COMMAND_TASK_SIZE = 3;
     private static volatile UCNetAnalysisManager mInstance = null;
     private UCApiManager mApiManager;
@@ -87,9 +90,9 @@ public class UCNetAnalysisManager {
     
     private String appSecret;
     private String appKey;
+    private OptionalData optionalData;
     
     private UCNetAnalysisManager(Context context, String appKey, String appSecret) {
-        JLog.E(TAG, "[appKey]:" + appKey + "\n[appSecret]:" + appSecret);
         this.mContext = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
@@ -147,7 +150,12 @@ public class UCNetAnalysisManager {
     }
     
     public void register(OnSdkListener listener) {
+        register(listener, null);
+    }
+    
+    public void register(OnSdkListener listener, OptionalData optionalData) {
         setSdkListener(listener);
+        this.optionalData = optionalData;
         
         if (TextUtils.isEmpty(appSecret) || TextUtils.isEmpty(appSecret)) {
             if (mSdkListener != null)
@@ -324,7 +332,6 @@ public class UCNetAnalysisManager {
         if (networkInfo == null || !networkInfo.isConnectedOrConnecting())
             for (int i = 0; i < networks.length; i++) {
                 //获取ConnectivityManager对象对应的NetworkInfo对象
-                JLog.T(TAG, "[" + i + "]: " + connMgr.getNetworkInfo(networks[i]).toString() + "\n");
                 if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
                     networkInfo = connMgr.getNetworkInfo(networks[i]);
                     break;
@@ -577,8 +584,8 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, mCurSrcIpInfo);
-                JLog.D(TAG, "[response]:" + response.toString());
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, mCurSrcIpInfo, optionalData);
+                JLog.D(TAG, "[response]:" + (response == null ? "null" : response.toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;
@@ -651,8 +658,8 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, mCurSrcIpInfo);
-                JLog.D(TAG, "[response]:" + response.toString());
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, mCurSrcIpInfo, optionalData);
+                JLog.D(TAG, "[response]:" + (response == null ? "null" : response.toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;

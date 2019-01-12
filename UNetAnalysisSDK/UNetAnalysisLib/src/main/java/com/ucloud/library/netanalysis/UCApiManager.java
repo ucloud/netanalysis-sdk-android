@@ -18,8 +18,9 @@ import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
 import com.ucloud.library.netanalysis.api.bean.IpListBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportEncryptBean;
-import com.ucloud.library.netanalysis.api.interceptor.BaseInterceptor;
+import com.ucloud.library.netanalysis.api.interceptor.UCInterceptor;
 import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
+import com.ucloud.library.netanalysis.module.OptionalData;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.HexFormatter;
 import com.ucloud.library.netanalysis.utils.JLog;
@@ -27,9 +28,12 @@ import com.ucloud.library.netanalysis.utils.JLog;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
+import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +41,12 @@ import java.util.concurrent.TimeUnit;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -50,7 +60,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-class UCApiManager {
+final class UCApiManager {
     private final String TAG = this.getClass().getSimpleName();
     
     public static final long DEFAULT_CONNECT_TIMEOUT = 5 * 1000;
@@ -74,7 +84,7 @@ class UCApiManager {
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
                 .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
-                .addInterceptor(new BaseInterceptor())
+                .addInterceptor(new UCInterceptor())
                 .build();
         
         retrofit = new Retrofit.Builder()
@@ -91,7 +101,7 @@ class UCApiManager {
      *
      * @param callback 回调接口 {@link PublicIpBean}
      */
-    public void apiGetPublicIpInfo(Callback<PublicIpBean> callback) {
+    void apiGetPublicIpInfo(Callback<PublicIpBean> callback) {
         Call<PublicIpBean> call = apiService.getPublicIpInfo(BuildConfig.UCLOUD_API_IPIP);
         call.enqueue(callback);
     }
@@ -101,7 +111,7 @@ class UCApiManager {
      *
      * @param callback 回调接口 {@link UCApiResponseBean}<{@link IpListBean}>
      */
-    public void apiGetPingList(Callback<UCApiResponseBean<IpListBean>> callback) {
+    void apiGetPingList(Callback<UCApiResponseBean<IpListBean>> callback) {
         Call<UCApiResponseBean<IpListBean>> call = apiService.getPingList(new UCApiBaseRequestBean(appKey));
         call.enqueue(callback);
     }
@@ -112,12 +122,13 @@ class UCApiManager {
      * @param reportAddress 上报接口地址
      * @param pingData      ping结果数据 {@link PingDataBean}
      * @param srcIpInfo     本地IP信息 {@link IpInfoBean}
+     * @param optionalData  用户自定义信息{@link OptionalData}
      * @return response返回     {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    public Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, IpInfoBean srcIpInfo) throws IOException {
+    Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, IpInfoBean srcIpInfo, OptionalData optionalData) throws IOException {
         ReportPingBean report = new ReportPingBean(appKey, pingData,
-                new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL())
+                new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL(), (optionalData == null ? null : optionalData.toString()))
                 , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
@@ -134,12 +145,13 @@ class UCApiManager {
      * @param reportAddress  上报接口地址
      * @param tracerouteData traceroute结果数据 {@link TracerouteDataBean}
      * @param srcIpInfo      本地IP信息 {@link IpInfoBean}
+     * @param optionalData   用户自定义信息{@link OptionalData}
      * @return response返回  {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    public Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, IpInfoBean srcIpInfo) throws IOException {
+    Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, IpInfoBean srcIpInfo, OptionalData optionalData) throws IOException {
         ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
-                new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip())
+                new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip(), (optionalData == null ? null : optionalData.toString()))
                 , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
@@ -155,19 +167,19 @@ class UCApiManager {
     private UCReportEncryptBean encryptReportData(UCReportBean reportBean) {
         if (reportBean == null)
             return null;
-    
+        
         String oriTag = reportBean.getTag();
         String oriIpInfo = reportBean.getIpInfo();
-    
+        
         if (TextUtils.isEmpty(oriTag) || TextUtils.isEmpty(oriIpInfo))
             return null;
-    
+        
         UCReportEncryptBean encryptBean = new UCReportEncryptBean("");
         
         try {
             reportBean.setTag(encryptRSA(reportBean.getTag(), appSecret));
             reportBean.setIpInfo(encryptRSA(reportBean.getIpInfo(), appSecret));
-    
+            
             encryptBean.setData(Base64.encodeToString(reportBean.toString().getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
             return encryptBean;
         } catch (NoSuchPaddingException e) {
@@ -185,7 +197,7 @@ class UCApiManager {
         } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
         }
-    
+        
         return null;
     }
     
