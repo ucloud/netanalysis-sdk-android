@@ -20,20 +20,15 @@ import com.ucloud.library.netanalysis.api.bean.UCReportBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportEncryptBean;
 import com.ucloud.library.netanalysis.api.interceptor.UCInterceptor;
 import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
-import com.ucloud.library.netanalysis.module.OptionalData;
+import com.ucloud.library.netanalysis.module.OptionalParam;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.HexFormatter;
-import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
-import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -41,12 +36,6 @@ import java.util.concurrent.TimeUnit;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -122,13 +111,13 @@ final class UCApiManager {
      * @param reportAddress 上报接口地址
      * @param pingData      ping结果数据 {@link PingDataBean}
      * @param srcIpInfo     本地IP信息 {@link IpInfoBean}
-     * @param optionalData  用户自定义信息{@link OptionalData}
+     * @param optionalParam  用户自定义信息{@link OptionalParam}
      * @return response返回     {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, IpInfoBean srcIpInfo, OptionalData optionalData) throws IOException {
+    Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
         ReportPingBean report = new ReportPingBean(appKey, pingData,
-                new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL(), (optionalData == null ? null : optionalData.toString()))
+                new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL(), (optionalParam == null ? null : optionalParam.toString()))
                 , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
@@ -145,13 +134,13 @@ final class UCApiManager {
      * @param reportAddress  上报接口地址
      * @param tracerouteData traceroute结果数据 {@link TracerouteDataBean}
      * @param srcIpInfo      本地IP信息 {@link IpInfoBean}
-     * @param optionalData   用户自定义信息{@link OptionalData}
+     * @param optionalParam   用户自定义信息{@link OptionalParam}
      * @return response返回  {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, IpInfoBean srcIpInfo, OptionalData optionalData) throws IOException {
+    Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
         ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
-                new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip(), (optionalData == null ? null : optionalData.toString()))
+                new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip(), (optionalParam == null ? null : optionalParam.toString()))
                 , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);

@@ -19,7 +19,7 @@ import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
 import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
-import com.ucloud.library.netanalysis.module.OptionalData;
+import com.ucloud.library.netanalysis.module.OptionalParam;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
@@ -51,16 +51,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
-        OptionalData.OptionalParam[] params = new OptionalData.OptionalParam[3];
-        OptionalData data = null;
-        params[0] = new OptionalData.OptionalParam("optKey 1", "optValue 1");
-        params[2] = new OptionalData.OptionalParam("optKey2", "optValue 2");
+        OptionalParam param = null;
         try {
-            data = new OptionalData(params);
+            param = new OptionalParam("optKey 1", "optValue 1");
         } catch (UCParamVerifyException e) {
             e.printStackTrace();
         }
-        mUCNetAnalysisManager.register(this, data);
+        mUCNetAnalysisManager.register(this, param);
         /**
          * 可以配置自定义需要检测的域名或IP地址
          */

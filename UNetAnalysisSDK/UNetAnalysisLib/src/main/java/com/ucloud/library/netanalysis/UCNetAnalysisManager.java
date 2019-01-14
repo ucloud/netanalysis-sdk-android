@@ -36,7 +36,7 @@ import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteCallback;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteNodeResult;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteResult;
 import com.ucloud.library.netanalysis.module.IpReport;
-import com.ucloud.library.netanalysis.module.OptionalData;
+import com.ucloud.library.netanalysis.module.OptionalParam;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetStatus;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
@@ -90,7 +90,7 @@ public class UCNetAnalysisManager {
     
     private String appSecret;
     private String appKey;
-    private OptionalData optionalData;
+    private OptionalParam optionalParam;
     
     private UCNetAnalysisManager(Context context, String appKey, String appSecret) {
         this.mContext = context;
@@ -153,9 +153,9 @@ public class UCNetAnalysisManager {
         register(listener, null);
     }
     
-    public void register(OnSdkListener listener, OptionalData optionalData) {
+    public void register(OnSdkListener listener, OptionalParam optionalParam) {
         setSdkListener(listener);
-        this.optionalData = optionalData;
+        this.optionalParam = optionalParam;
         
         if (TextUtils.isEmpty(appSecret) || TextUtils.isEmpty(appSecret)) {
             if (mSdkListener != null)
@@ -584,8 +584,8 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, mCurSrcIpInfo, optionalData);
-                JLog.D(TAG, "[response]:" + (response == null ? "null" : response.toString()));
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, mCurSrcIpInfo, optionalParam);
+                JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;
@@ -658,8 +658,8 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, mCurSrcIpInfo, optionalData);
-                JLog.D(TAG, "[response]:" + (response == null ? "null" : response.toString()));
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, mCurSrcIpInfo, optionalParam);
+                JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;

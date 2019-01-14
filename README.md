@@ -13,29 +13,20 @@
 </br></br>
 ## 使用
 ### Dependencies
-NetAnalysis SDK依赖于Gson。
+NetAnalysis SDK依赖于Gson、Retrofit2.0
 - 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在app模块的build.gradle的dependencies中建立依赖
 - 在app模块的build.gradle的dependencies中添加
 
     ``` java
     dependencies {
-        // your dependence
+        /** 
+         * your other dependencies
+         */ 
         implementation 'com.google.code.gson:gson:2.8.5'
+        implementation 'com.squareup.retrofit2:retrofit:2.4.0'
+        implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
     }
     ```
-
-</br>
-
-### 项目信息配置
-将你在UCloud平台注册的AppId和AppKey，配置在AndroidManifest.xml的<Application></Application>内
-``` xml
-<meta-data
-		android:name="appid"
-		android:value="appid"/>
-<meta-data
-	  android:name="appkey"
-	  android:value="appkey"/>
-```
 
 </br>
 
@@ -55,9 +46,12 @@ NetAnalysis SDK依赖于Gson。
 #### 1、在**自定义Application类**或者**主Activity类**的onCreate中构建UCNetAnalysisManager，并注册
 ``` java
 // 使用Application Context 构建UCNetAnalysisManager实例
-UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext());
-// 设置SDK回调接口
-manager.setSdkListener(new OnSdkListener() {
+String appKey = "UCloud为您的APP分配的APP_KEY";
+String appSecret = "UCloud为您的APP分配的APP_SECRET";
+UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext(), appKey, appSecret);
+
+// SDK回调
+OnSdkListener sdkListener = new OnSdkListener() {
     @Override
     public void onRegister(UCSdkStatus status) {
         // SDK register完成后回调，register结果见**UCSdkStatus**说明
@@ -67,9 +61,19 @@ manager.setSdkListener(new OnSdkListener() {
     public void onNetworkStatusChanged(UCNetworkInfo networkInfo) {
         // 网络状态改变回调，回调结果见**UCNetworkInfo**说明
     }
-});
+};
+
+// 可选的用户自定义上报字段
+try {
+    OptionalData optionalData = new OptionalData(new OptionalData.OptionalParam[]{});
+} catch(UCParamVerifyException e) {
+    e.printStackTrace();
+}
+
 // 注册sdk模块
-manager.register();
+manager.register(sdkListener);      // 不配置自定义上报字段的注册
+// 或者
+manager.register(sdkListener, optionalData); // 配置自定义上报字段的注册
 ```
 
 #### 2、配置你需要分析网络质量的IP地址或者域名
@@ -137,6 +141,17 @@ public void register(OnSdkListener listener)
     - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
 - **return**: -
 
+#### 注册UCNetAnalysisManager模块(带有用户自定义上报字段)
+``` java
+public void register(OnSdkListener listener, OptionalParam optionalParam)
+```
+
+- **param**: 
+    - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
+    - optionalParam: 用户自定义上报字段，详情见**OptionalParam**说明
+- **return**: -
+
+
 #### 设置Sdk回调接口
 ``` java
 public void setSdkListener(OnSdkListener listener)
@@ -197,6 +212,32 @@ public static void destroy()
 
 - **param**: -
 - **return**: -
+
+</br></br>
+### OptionalParam
+> 用户可选的自定义上报字段
+
+#### 注意事项
+- OptionalParam是(String-String)键值对，其中：
+    -  Key不能是null或者""。
+    -  Key的最大字符长度是20 bytes，Value的最大字符长度是90 bytes。
+    -  OptionalParam中Key和Value，均不可包含 ' **,** '（**包括英文以及全角和半角**） 和 ' **=** ' ，这两个字符。
+- 如果有不满足规则的OptionalParam，new OptionalParam()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
+- 该字段作为用户在查询上报数据时，可作为查询索引，故**不建议用户在Value中拼接多个值**。
+
+### 该SDK尊重客户和终端用户的隐私，请务必不要上传带有用户隐私信息，包括但不限于：用户手机号、用户身份证号、用户手机IMEI值、用户地址等敏感信息
+
+
+``` java 
+public class OptionalParam {
+    private String key;
+    private String value;
+        
+    public OptionalParam(String key, String value) throws UCParamVerifyException {
+        // 构造方法
+    }
+}
+```
 
 </br></br>
 ### OnSdkListener
@@ -315,6 +356,40 @@ public enum UCNetStatus {
  
     // 未知类型
     NET_STATUS_UNKNOW,
+}
+```
+
+</br></br>
+### JLog
+> Log打印工具
+
+``` java
+public class JLog {
+    public static boolean SHOW_DEBUG = false;
+    public static boolean SHOW_VERBOSE = true;
+    public static boolean SHOW_INFO = true;
+    public static boolean SHOW_WARN = true;
+    public static boolean SHOW_ERROR = true;
+    
+    public static void D(String TAG, String info) {
+        // ...
+    }
+    
+    public static void V(String TAG, String info) {
+        // ...
+    }
+    
+    public static void I(String TAG, String info) {
+        // ...
+    }
+    
+    public static void W(String TAG, String info) {
+        // ...
+    }
+    
+    public static void E(String TAG, String info) {
+        // ...
+    }
 }
 ```
 
