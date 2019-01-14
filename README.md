@@ -118,10 +118,12 @@ protected void onDestroy(){
 
 #### 创建UCNetAnalysisManager单例对象
 ``` java
-public static UCNetAnalysisManager createManager(Context applicationContext)
+public static UCNetAnalysisManager createManager(Context applicationContext,  String appKey, String appSecret)
 ```
 - **param**:
     -  applicationContext: application的context
+    -  appKey: UCloud为您的APP分配的APP_KEY
+    -  appSecret: UCloud为您的APP分配的APP_SECRET
 - **return**: UCNetAnalysisManager单例对象
 
 #### 获取UCNetAnalysisManager单例对象
