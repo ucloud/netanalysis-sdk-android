@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         getHandler().post(new Runnable() {
                             @Override
                             public void run() {
+                                mProgressDialog.dismiss();
                                 try {
                                     txt_result.setText(new JSONObject(result.toString()).toString(4));
                                 } catch (JSONException e) {
@@ -137,7 +138,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         });
                     }
                 });
-                mProgressDialog.dismiss();
                 
                 break;
             }
@@ -157,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         ips.add(str);
                 }
                 mUCNetAnalysisManager.setCustomIps(ips);
+                Toast.makeText(this, "配置成功", Toast.LENGTH_SHORT).show();
                 
                 break;
             }
