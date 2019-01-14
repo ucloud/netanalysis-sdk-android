@@ -118,7 +118,7 @@ protected void onDestroy(){
 
 #### 创建UCNetAnalysisManager单例对象
 ``` java
-public static UCNetAnalysisManager createManager(Context applicationContext,  String appKey, String appSecret)
+public static UCNetAnalysisManager createManager(Context applicationContext, String appKey, String appSecret)
 ```
 - **param**:
     -  applicationContext: application的context
