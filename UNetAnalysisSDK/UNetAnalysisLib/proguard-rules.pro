@@ -20,7 +20,6 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-
 -target 1.8
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
 -optimizationpasses 5
@@ -77,44 +76,16 @@
 #    public <methods>;
 #}
 
--keep @com.ucloud.library.netanalysis.annotation.NotProguard class * {*;}
--keep class com.ucloud.library.netanalysis.UCNetAnalysisManager{
-    @com.ucloud.library.netanalysis.annotation.NotProguard <fields>;
-    @com.ucloud.library.netanalysis.annotation.NotProguard <methods>;
+# com.ucloud.library.netanalysislib.**
+-keep class com.ucloud.library.netanalysis.** {
+    public <fields>;
+    public <methods>;
 }
 
+# -------------------------------------------------------------
+# Retrofit2
 -keep class * extends retrofit2.Callback {
     *;
-}
-
-# com.ucloud.library.netanalysislib.command.**
--keep class com.ucloud.library.netanalysis.command.** {
-    public <fields>;
-    public <methods>;
-}
-
-# com.ucloud.library.netanalysislib.utils.**
--keep class com.ucloud.library.netanalysis.utils.** {
-    public <fields>;
-    public <methods>;
-}
-
-# com.ucloud.library.netanalysislib.module.**
--keep class com.ucloud.library.netanalysis.module.** {
-    public <fields>;
-    public <methods>;
-}
-
-# com.ucloud.library.netanalysislib.callback.**
--keep class com.ucloud.library.netanalysis.callback.** {
-    public <fields>;
-    public <methods>;
-}
-
-# com.ucloud.library.netanalysis.api.**
--keep class com.ucloud.library.netanalysis.api.** {
-    public <fields>;
-    public <methods>;
 }
 
 # -------------------------------------------------------------
