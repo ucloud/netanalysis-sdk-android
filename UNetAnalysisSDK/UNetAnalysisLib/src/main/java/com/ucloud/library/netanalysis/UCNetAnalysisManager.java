@@ -365,6 +365,7 @@ public class UCNetAnalysisManager {
             return;
         
         mContext.unregisterReceiver(mNetStatusReceiver);
+        isStartMonitorNetStatus = false;
         mNetStatusReceiver = null;
     }
     
