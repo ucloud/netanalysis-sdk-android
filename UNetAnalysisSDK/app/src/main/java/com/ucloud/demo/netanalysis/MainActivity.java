@@ -18,8 +18,6 @@ import android.widget.Toast;
 import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
-import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
-import com.ucloud.library.netanalysis.module.OptionalParam;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
@@ -51,13 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
-        OptionalParam param = null;
-        try {
-            param = new OptionalParam("optKey 1", "optValue 1");
-        } catch (UCParamVerifyException e) {
-            e.printStackTrace();
-        }
-        mUCNetAnalysisManager.register(this, param);
+        mUCNetAnalysisManager.register(this);
         /**
          * 可以配置自定义需要检测的域名或IP地址
          */
@@ -124,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mUCNetAnalysisManager.analyse(new OnAnalyseListener() {
                     @Override
                     public void onAnalysed(final UCAnalysisResult result) {
-                        JLog.E("TEST", result.toString());
+                        JLog.D("TEST", result.toString());
                         getHandler().post(new Runnable() {
                             @Override
                             public void run() {
