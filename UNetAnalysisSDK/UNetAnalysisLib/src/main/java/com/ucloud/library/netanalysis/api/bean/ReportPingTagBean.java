@@ -14,10 +14,15 @@ public class ReportPingTagBean extends ReportTagBean {
     private int TTL = 0;
     
     public ReportPingTagBean(String appId, String dstIp, int TTL) {
-        super(appId);
+        this(appId, dstIp, TTL, null);
+    }
+    
+    public ReportPingTagBean(String appId, String dstIp, int TTL, String optionalData) {
+        super(appId, optionalData);
         this.dstIp = dstIp;
         this.TTL = TTL;
     }
+    
     
     public String getDstIp() {
         return dstIp;

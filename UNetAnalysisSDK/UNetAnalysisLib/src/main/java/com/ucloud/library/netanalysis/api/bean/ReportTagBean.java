@@ -1,6 +1,9 @@
 package com.ucloud.library.netanalysis.api.bean;
 
+import android.text.TextUtils;
+
 import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 
 /**
  * Created by joshua on 2018/12/27 13:31.
@@ -12,9 +15,14 @@ public class ReportTagBean {
     protected String appId;
     @SerializedName("platform")
     protected int platform = 0;
+    @SerializedName("s_ver")
+    protected final String sdkVersion = UCNetAnalysisManager.SDK_VERSION;
+    @SerializedName("optional_data")
+    protected String optionalData;
     
-    protected ReportTagBean(String appId) {
+    protected ReportTagBean(String appId, String optionalData) {
         this.appId = appId;
+        this.optionalData = optionalData;
     }
     
     public String getAppId() {
@@ -33,6 +41,9 @@ public class ReportTagBean {
         StringBuffer sb = new StringBuffer();
         sb.append(String.format("app_id=%s", appId));
         sb.append(String.format(",platform=%d", platform));
+        sb.append(String.format(",s_ver=%s", sdkVersion));
+        if (!TextUtils.isEmpty(optionalData))
+            sb.append(String.format(",%s", optionalData));
         return sb.toString();
     }
     

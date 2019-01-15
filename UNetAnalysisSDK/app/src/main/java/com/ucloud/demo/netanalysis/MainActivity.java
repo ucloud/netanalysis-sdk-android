@@ -41,8 +41,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private AppCompatEditText edit_host;
     private InputMethodManager imm;
     
-    private String appKey = "";
-    private String appSecret = "";
+    private String appKey = UCloud为您的APP分配的APP_KEY;
+    private String appSecret = UCloud为您的APP分配的APP_SECRET;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,10 +116,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mUCNetAnalysisManager.analyse(new OnAnalyseListener() {
                     @Override
                     public void onAnalysed(final UCAnalysisResult result) {
-                        JLog.E("TEST", result.toString());
+                        JLog.D("TEST", result.toString());
                         getHandler().post(new Runnable() {
                             @Override
                             public void run() {
+                                mProgressDialog.dismiss();
                                 try {
                                     txt_result.setText(new JSONObject(result.toString()).toString(4));
                                 } catch (JSONException e) {
@@ -129,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         });
                     }
                 });
-                mProgressDialog.dismiss();
                 
                 break;
             }
@@ -149,6 +149,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         ips.add(str);
                 }
                 mUCNetAnalysisManager.setCustomIps(ips);
+                Toast.makeText(this, "配置成功", Toast.LENGTH_SHORT).show();
                 
                 break;
             }

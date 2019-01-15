@@ -13,29 +13,20 @@
 </br></br>
 ## 使用
 ### Dependencies
-NetAnalysis SDK依赖于Gson。
+NetAnalysis SDK依赖于Gson、Retrofit2.0
 - 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在app模块的build.gradle的dependencies中建立依赖
 - 在app模块的build.gradle的dependencies中添加
 
     ``` java
     dependencies {
-        // your dependence
+        /** 
+         * your other dependencies
+         */ 
         implementation 'com.google.code.gson:gson:2.8.5'
+        implementation 'com.squareup.retrofit2:retrofit:2.4.0'
+        implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
     }
     ```
-
-</br>
-
-### 项目信息配置
-将你在UCloud平台注册的AppId和AppKey，配置在AndroidManifest.xml的<Application></Application>内
-``` xml
-<meta-data
-		android:name="appid"
-		android:value="appid"/>
-<meta-data
-	  android:name="appkey"
-	  android:value="appkey"/>
-```
 
 </br>
 
@@ -55,9 +46,12 @@ NetAnalysis SDK依赖于Gson。
 #### 1、在**自定义Application类**或者**主Activity类**的onCreate中构建UCNetAnalysisManager，并注册
 ``` java
 // 使用Application Context 构建UCNetAnalysisManager实例
-UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext());
-// 设置SDK回调接口
-manager.setSdkListener(new OnSdkListener() {
+String appKey = "UCloud为您的APP分配的APP_KEY";
+String appSecret = "UCloud为您的APP分配的APP_SECRET";
+UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext(), appKey, appSecret);
+
+// SDK回调
+OnSdkListener sdkListener = new OnSdkListener() {
     @Override
     public void onRegister(UCSdkStatus status) {
         // SDK register完成后回调，register结果见**UCSdkStatus**说明
@@ -67,9 +61,10 @@ manager.setSdkListener(new OnSdkListener() {
     public void onNetworkStatusChanged(UCNetworkInfo networkInfo) {
         // 网络状态改变回调，回调结果见**UCNetworkInfo**说明
     }
-});
+};
+
 // 注册sdk模块
-manager.register();
+manager.register(sdkListener);
 ```
 
 #### 2、配置你需要分析网络质量的IP地址或者域名
@@ -114,10 +109,12 @@ protected void onDestroy(){
 
 #### 创建UCNetAnalysisManager单例对象
 ``` java
-public static UCNetAnalysisManager createManager(Context applicationContext)
+public static UCNetAnalysisManager createManager(Context applicationContext, String appKey, String appSecret)
 ```
 - **param**:
     -  applicationContext: application的context
+    -  appKey: UCloud为您的APP分配的APP_KEY
+    -  appSecret: UCloud为您的APP分配的APP_SECRET
 - **return**: UCNetAnalysisManager单例对象
 
 #### 获取UCNetAnalysisManager单例对象
@@ -315,6 +312,40 @@ public enum UCNetStatus {
  
     // 未知类型
     NET_STATUS_UNKNOW,
+}
+```
+
+</br></br>
+### JLog
+> Log打印工具
+
+``` java
+public class JLog {
+    public static boolean SHOW_DEBUG = false;
+    public static boolean SHOW_VERBOSE = true;
+    public static boolean SHOW_INFO = true;
+    public static boolean SHOW_WARN = true;
+    public static boolean SHOW_ERROR = true;
+    
+    public static void D(String TAG, String info) {
+        // ...
+    }
+    
+    public static void V(String TAG, String info) {
+        // ...
+    }
+    
+    public static void I(String TAG, String info) {
+        // ...
+    }
+    
+    public static void W(String TAG, String info) {
+        // ...
+    }
+    
+    public static void E(String TAG, String info) {
+        // ...
+    }
 }
 ```
 

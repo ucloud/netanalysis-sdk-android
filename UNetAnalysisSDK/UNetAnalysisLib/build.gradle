@@ -10,8 +10,8 @@ android {
     defaultConfig {
         minSdkVersion 10
         targetSdkVersion 26
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 0
+        versionName "1.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -122,7 +122,7 @@ task makeJar(dependsOn: ['clearJar', 'build', 'compileReleaseJavaWithJavac'], ty
 //    exclude "**/BuildConfig.class"
     exclude "**/R.class"
     exclude "android/**"
-    exclude { it.name.startsWith('R$'); }
+    exclude { it.name.startsWith('R$') }
     //只导入资源路径集下的部分资源
     //    include "org/chaos/demo/jar/**/*.class"
     //注: exclude include 支持可变长参数

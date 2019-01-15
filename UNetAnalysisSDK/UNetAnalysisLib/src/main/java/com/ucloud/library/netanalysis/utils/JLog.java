@@ -14,11 +14,11 @@ public class JLog {
     
     private boolean isSaveLog = false;
     
-    private static final boolean SHOW_TEST = false;
-    public static final boolean SHOW_DEBUG = true;
-    public static final boolean SHOW_VERBOSE = true;
+    private static boolean SHOW_TEST = false;
+    public static boolean SHOW_DEBUG = false;
+    public static boolean SHOW_VERBOSE = true;
     public static boolean SHOW_INFO = true;
-    public static final boolean SHOW_WARN = true;
+    public static boolean SHOW_WARN = true;
     public static boolean SHOW_ERROR = true;
     
     private static final String LOG_POSITION_FORMAT = "[(%s:%s)#%s]: ";
