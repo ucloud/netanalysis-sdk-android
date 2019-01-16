@@ -47,8 +47,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private AppCompatEditText edit_host;
     private InputMethodManager imm;
     
-    private String appKey = "66d026c4-9c79-5d3f-aa53-987676628af7";
-    private String appSecret = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4/Joebeab1IluRG71SiJmfg3P\npYYf5NC39WAMoZza4mMoKglk1wc2pD/R9EafyGHibCKEGzi7SZwmURVrq47OoMwF\nsiSb03wIPKnVeBFnwuEQXIgymqmzC5jAvlOQELmXmbRX9gn38w0Ry92MOwv3N0Qa\nP5vaOUWgd+/4EWA5MwIDAQAB\n-----END PUBLIC KEY-----";
+    private String appKey = UCloud为您的APP分配的APP_KEY;
+    private String appSecret = UCloud为您的APP分配的APP_SECRET;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
