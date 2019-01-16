@@ -11,28 +11,30 @@ import com.google.gson.annotations.SerializedName;
 public class IpInfoBean {
     @SerializedName("addr")
     private String ip;
-    @SerializedName("city_name")
+    @SerializedName("cityName")
     private String city_name;
-    @SerializedName("continent_code")
-    private String continent_code;
+    @SerializedName("continentCode")
+    private String continentCode;
     @SerializedName("country_code")
-    private String country_code;
+    private String countryCode;
     @SerializedName("country_name")
-    private String country_name;
-    @SerializedName("isp_domain")
+    private String countryName;
+    @SerializedName("ispDomain")
     private String isp_domain;
     @SerializedName("latitude")
     private String latitude;
     @SerializedName("longitude")
     private String longitude;
-    @SerializedName("owner_domain")
+    @SerializedName("ownerDomain")
     private String owner_domain;
     @SerializedName("region_name")
-    private String region_name;
+    private String regionName;
     @SerializedName("timezone")
     private String timezone;
     @SerializedName("utc_offset")
-    private String utc_offset;
+    private String utcOffset;
+    @SerializedName("net_type")
+    private String netType;
     
     public String getIp() {
         return ip;
@@ -50,28 +52,28 @@ public class IpInfoBean {
         this.city_name = city_name;
     }
     
-    public String getContinent_code() {
-        return continent_code;
+    public String getContinentCode() {
+        return continentCode;
     }
     
-    public void setContinent_code(String continent_code) {
-        this.continent_code = continent_code;
+    public void setContinentCode(String continentCode) {
+        this.continentCode = continentCode;
     }
     
-    public String getCountry_code() {
-        return country_code;
+    public String getCountryCode() {
+        return countryCode;
     }
     
-    public void setCountry_code(String country_code) {
-        this.country_code = country_code;
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
     }
     
-    public String getCountry_name() {
-        return country_name;
+    public String getCountryName() {
+        return countryName;
     }
     
-    public void setCountry_name(String country_name) {
-        this.country_name = country_name;
+    public void setCountryName(String countryName) {
+        this.countryName = countryName;
     }
     
     public String getIsp_domain() {
@@ -106,12 +108,12 @@ public class IpInfoBean {
         this.owner_domain = owner_domain;
     }
     
-    public String getRegion_name() {
-        return region_name;
+    public String getRegionName() {
+        return regionName;
     }
     
-    public void setRegion_name(String region_name) {
-        this.region_name = region_name;
+    public void setRegionName(String regionName) {
+        this.regionName = regionName;
     }
     
     public String getTimezone() {
@@ -122,24 +124,33 @@ public class IpInfoBean {
         this.timezone = timezone;
     }
     
-    public String getUtc_offset() {
-        return utc_offset;
+    public String getUtcOffset() {
+        return utcOffset;
     }
     
-    public void setUtc_offset(String utc_offset) {
-        this.utc_offset = utc_offset;
+    public void setUtcOffset(String utcOffset) {
+        this.utcOffset = utcOffset;
+    }
+    
+    public String getNetType() {
+        return netType;
+    }
+    
+    public void setNetType(String netType) {
+        this.netType = netType;
     }
     
     protected String makeReportString() {
         StringBuffer sb = new StringBuffer();
         sb.append(String.format("ip=%s", ip));
-        sb.append(String.format(",region=%s", region_name));
-        sb.append(String.format(",country=%s", country_name));
+        sb.append(String.format(",region=%s", regionName));
+        sb.append(String.format(",country=%s", countryName));
         sb.append(String.format(",city=%s", city_name));
         sb.append(String.format(",isp=%s", isp_domain));
         sb.append(String.format(",lat=%s", longitude));
         sb.append(String.format(",lat=%s", latitude));
         sb.append(String.format(",owner=%s", owner_domain));
+        sb.append(String.format(",net_type=%s", netType));
         return sb.toString();
     }
     

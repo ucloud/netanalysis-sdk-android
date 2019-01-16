@@ -457,6 +457,7 @@ public class UCNetAnalysisManager {
                 
                 JLog.D(TAG, "[ip info]:" + response.body());
                 mCurSrcIpInfo = response.body().getIpInfo();
+                mCurSrcIpInfo.setNetType(checkNetworkStatus().getNetStatus().getValue());
                 doGetIpList();
                 synchronized (flag) {
                     flag = false;

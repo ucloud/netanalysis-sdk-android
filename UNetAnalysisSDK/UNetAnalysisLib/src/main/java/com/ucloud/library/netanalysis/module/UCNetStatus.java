@@ -29,21 +29,31 @@ import android.telephony.TelephonyManager;
  */
 public enum UCNetStatus {
     /** 无网络连接 */
-    NET_STATUS_NOT_CONNECTED,
+    NET_STATUS_NOT_CONNECTED("UNCONNECT"),
     /** WIFI网络 */
-    NET_STATUS_WIFI,
+    NET_STATUS_WIFI("WIFI"),
     /** 4G网络 */
-    NET_STATUS_4G,
+    NET_STATUS_4G("4G"),
     /** 3.5G网络 */
-    NET_STATUS_3_5G,
+    NET_STATUS_3_5G("3.5G"),
     /** 3G网络 */
-    NET_STATUS_3G,
+    NET_STATUS_3G("3G"),
     /** 2.5G网络 */
-    NET_STATUS_2_5G,
+    NET_STATUS_2_5G("2.5G"),
     /** 2G网络 */
-    NET_STATUS_2G,
+    NET_STATUS_2G("2G"),
     /** 未知类型 */
-    NET_STATUS_UNKNOW;
+    NET_STATUS_UNKNOW("UNKNOW");
+    
+    private String value;
+    
+    UCNetStatus(String value) {
+        this.value = value;
+    }
+    
+    public String getValue() {
+        return value;
+    }
     
     public static UCNetStatus parseStatusByNetworkInfo(NetworkInfo networkInfo) {
         if (networkInfo == null)
