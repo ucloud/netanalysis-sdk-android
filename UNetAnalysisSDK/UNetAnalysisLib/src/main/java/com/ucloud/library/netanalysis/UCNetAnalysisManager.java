@@ -66,6 +66,7 @@ public class UCNetAnalysisManager {
     private final String TAG = getClass().getSimpleName();
     
     public static final String SDK_VERSION = String.format("Android/%s.%d", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE);
+    public static final int CUSTOM_IP_LIST_SIZE = 5;
     
     private final int MAX_COMMAND_TASK_SIZE = 3;
     private static volatile UCNetAnalysisManager mInstance = null;
@@ -176,7 +177,12 @@ public class UCNetAnalysisManager {
         mSingleThreadPool = Executors.newSingleThreadExecutor();
         mCustomIps.clear();
         if (ips != null && !ips.isEmpty()) {
-            mCustomIps.addAll(ips);
+            if (ips.size() > CUSTOM_IP_LIST_SIZE) {
+                for (int i = 0; i < CUSTOM_IP_LIST_SIZE; i++)
+                    mCustomIps.add(ips.get(i));
+            } else {
+                mCustomIps.addAll(ips);
+            }
         }
         mCustomLock.unlock();
         
@@ -473,7 +479,7 @@ public class UCNetAnalysisManager {
     }
     
     private void doGetIpList() {
-        mApiManager.apiGetPingList(new Callback<UCApiResponseBean<IpListBean>>() {
+        mApiManager.apiGetPingList(mCurSrcIpInfo, new Callback<UCApiResponseBean<IpListBean>>() {
             @Override
             public void onResponse(Call<UCApiResponseBean<IpListBean>> call, Response<UCApiResponseBean<IpListBean>> response) {
                 if (response == null || response.body() == null)

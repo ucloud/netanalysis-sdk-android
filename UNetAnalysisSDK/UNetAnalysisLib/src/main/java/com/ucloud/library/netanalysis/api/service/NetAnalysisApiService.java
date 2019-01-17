@@ -5,6 +5,7 @@ import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiBaseRequestBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
 import com.ucloud.library.netanalysis.api.bean.IpListBean;
+import com.ucloud.library.netanalysis.api.bean.UCGetIpListRequestBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportEncryptBean;
 
 import retrofit2.Call;
@@ -23,6 +24,7 @@ public interface NetAnalysisApiService {
     /**
      * 获取移动端公网IP信息
      *
+     * @param url 接口地址
      * @return
      */
     @Headers({"Content-Type: application/json;charset=utf-8", "Accept: */*"})
@@ -32,11 +34,12 @@ public interface NetAnalysisApiService {
     /**
      * 获取UCloud需要监测的IP列表，以及上报服务器列表
      *
+     * @param request 请求参数 {@link UCGetIpListRequestBean}
      * @return
      */
     @Headers({"Content-Type: application/json;charset=utf-8", "Accept: */*"})
     @POST("iplist/getpinglist/")
-    Call<UCApiResponseBean<IpListBean>> getPingList(@Body UCApiBaseRequestBean request);
+    Call<UCApiResponseBean<IpListBean>> getPingList(@Body UCGetIpListRequestBean request);
     
     /**
      * 上报Ping的结果

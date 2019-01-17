@@ -17,6 +17,8 @@ public class ReportTagBean {
     protected int platform = 0;
     @SerializedName("s_ver")
     protected final String sdkVersion = UCNetAnalysisManager.SDK_VERSION;
+    @SerializedName("cus")
+    protected int cus = 0;
     @SerializedName("optional_data")
     protected String optionalData;
     
@@ -37,11 +39,20 @@ public class ReportTagBean {
         return platform;
     }
     
+    public int getCus() {
+        return cus;
+    }
+    
+    public void setCus(int cus) {
+        this.cus = cus;
+    }
+    
     protected String makeReportString() {
         StringBuffer sb = new StringBuffer();
         sb.append(String.format("app_id=%s", appId));
         sb.append(String.format(",platform=%d", platform));
         sb.append(String.format(",s_ver=%s", sdkVersion));
+        sb.append(String.format(",cus=%d", cus));
         if (!TextUtils.isEmpty(optionalData))
             sb.append(String.format(",%s", optionalData));
         return sb.toString();

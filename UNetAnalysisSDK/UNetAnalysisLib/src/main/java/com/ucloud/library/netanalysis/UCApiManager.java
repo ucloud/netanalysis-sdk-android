@@ -16,6 +16,7 @@ import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiBaseRequestBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
 import com.ucloud.library.netanalysis.api.bean.IpListBean;
+import com.ucloud.library.netanalysis.api.bean.UCGetIpListRequestBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportEncryptBean;
 import com.ucloud.library.netanalysis.api.interceptor.UCInterceptor;
@@ -98,10 +99,16 @@ final class UCApiManager {
     /**
      * 获取UCloud需要监测的IP列表，以及上报服务器列表
      *
-     * @param callback 回调接口 {@link UCApiResponseBean}<{@link IpListBean}>
+     * @param ipInfoBean 终端外网IP信息 {@link IpInfoBean}
+     * @param callback   回调接口 {@link UCApiResponseBean}<{@link IpListBean}>
      */
-    void apiGetPingList(Callback<UCApiResponseBean<IpListBean>> callback) {
-        Call<UCApiResponseBean<IpListBean>> call = apiService.getPingList(new UCApiBaseRequestBean(appKey));
+    void apiGetPingList(IpInfoBean ipInfoBean, Callback<UCApiResponseBean<IpListBean>> callback) {
+        UCGetIpListRequestBean requestBean = new UCGetIpListRequestBean(appKey);
+        if (ipInfoBean != null) {
+            requestBean.setLongitude(ipInfoBean.getLongitude());
+            requestBean.setLatitude(ipInfoBean.getLatitude());
+        }
+        Call<UCApiResponseBean<IpListBean>> call = apiService.getPingList(requestBean);
         call.enqueue(callback);
     }
     
