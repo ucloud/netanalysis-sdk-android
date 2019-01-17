@@ -11,6 +11,8 @@ import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 
 /**
@@ -57,14 +59,17 @@ final class TracerouteTask extends UNetCommandTask<TracerouteNodeResult> {
         
         currentCount = 0;
         long startTime = SystemClock.elapsedRealtime();
+        List<SingleNodeResult> singleNodeList = new ArrayList<>();
         while (isRunning && (currentCount < count)) {
             try {
-                parseInputInfo(execCommand(command));
+                SingleNodeResult nodeResult = parseSingleNodeInfoInput(execCommand(command));
                 float delay = (SystemClock.elapsedRealtime() - startTime) / 2.f;
-                
-                if (!resultData.isFinalRoute()
-                        && resultData.getStatus() == UCommandStatus.CMD_STATUS_SUCCESSFUL)
-                    resultData.getDelaies().add(delay);
+    
+                if (!nodeResult.isFinalRoute()
+                        && nodeResult.getStatus() == UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                    nodeResult.setDelay(delay);
+    
+                singleNodeList.add(nodeResult);
             } catch (IOException e) {
 //                e.printStackTrace();
             } catch (InterruptedException e) {
@@ -73,40 +78,46 @@ final class TracerouteTask extends UNetCommandTask<TracerouteNodeResult> {
                 currentCount++;
             }
         }
-        
+    
+        resultData = new TracerouteNodeResult(targetAddress.getHostAddress(), hop, singleNodeList);
         JLog.T(TAG, "[tranceroute(" + targetAddress.getHostAddress() + ") route]:" + (resultData == null ? "null" : resultData.toString()));
         return resultData;
     }
     
-    @Override
-    protected void parseInputInfo(String input) {
+    protected SingleNodeResult parseSingleNodeInfoInput(String input) {
         JLog.T(TAG, "[hop]:" + hop + " [org data]:" + input);
-        if (resultData == null)
-            resultData = new TracerouteNodeResult(targetAddress.getHostAddress(), hop);
+        SingleNodeResult nodeResult = new SingleNodeResult(targetAddress.getHostAddress(), hop);
         
         if (TextUtils.isEmpty(input)) {
-            resultData.setStatus(UCommandStatus.CMD_STATUS_NETWORK_ERROR);
-            resultData.getDelaies().add(0.f);
-            return;
+            nodeResult.setStatus(UCommandStatus.CMD_STATUS_NETWORK_ERROR);
+            nodeResult.setDelay(0.f);
+            return nodeResult;
         }
         
         Matcher matcherRouteNode = matcherRouteNode(input);
         
         if (matcherRouteNode.find()) {
-            resultData.setRouteIp(getIpFromMatcher(matcherRouteNode));
-            resultData.setStatus(UCommandStatus.CMD_STATUS_SUCCESSFUL);
+            nodeResult.setRouteIp(getIpFromMatcher(matcherRouteNode));
+            nodeResult.setStatus(UCommandStatus.CMD_STATUS_SUCCESSFUL);
         } else {
             Matcher matcherTargetId = matcherIp(input);
             if (matcherTargetId.find()) {
-                resultData.setRouteIp(matcherTargetId.group());
-                resultData.setStatus(UCommandStatus.CMD_STATUS_SUCCESSFUL);
+                nodeResult.setRouteIp(matcherTargetId.group());
+                nodeResult.setStatus(UCommandStatus.CMD_STATUS_SUCCESSFUL);
                 String time = getPingDelayFromMatcher(matcherTime(input));
-                resultData.getDelaies().add(Float.parseFloat(time));
+                nodeResult.setDelay(Float.parseFloat(time));
             } else {
-                resultData.setStatus(UCommandStatus.CMD_STATUS_FAILED);
-                resultData.getDelaies().add(0.f);
+                nodeResult.setStatus(UCommandStatus.CMD_STATUS_FAILED);
+                nodeResult.setDelay(0.f);
             }
         }
+        
+        return nodeResult;
+    }
+    
+    @Override
+    protected void parseInputInfo(String input) {
+    
     }
     
     @Override

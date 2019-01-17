@@ -2,6 +2,7 @@ package com.ucloud.library.netanalysis.command.net.traceroute;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +17,12 @@ public class TracerouteResult {
     private String targetIp;
     @SerializedName("tracerouteNodeResults")
     private List<TracerouteNodeResult> tracerouteNodeResults;
+    @SerializedName("timestamp")
+    private long timestamp;
     
-    public TracerouteResult(String targetIp) {
+    public TracerouteResult(String targetIp, long timestamp) {
         this.targetIp = targetIp;
+        this.timestamp = timestamp;
         tracerouteNodeResults = new ArrayList<>();
     }
     
@@ -28,6 +32,10 @@ public class TracerouteResult {
     
     public List<TracerouteNodeResult> getTracerouteNodeResults() {
         return tracerouteNodeResults;
+    }
+    
+    public long getTimestamp() {
+        return timestamp;
     }
     
     @Override

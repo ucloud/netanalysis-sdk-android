@@ -18,14 +18,21 @@ public class PingResult {
     private String targetIp;
     @SerializedName("pingPackages")
     private List<SinglePackagePingResult> pingPackages;
+    @SerializedName("timestamp")
+    private long timestamp;
     
-    protected PingResult(String targetIp) {
+    protected PingResult(String targetIp, long timestamp) {
         this.targetIp = targetIp;
+        this.timestamp = timestamp;
         this.pingPackages = new ArrayList<>();
     }
     
     public String getTargetIp() {
         return targetIp;
+    }
+    
+    public long getTimestamp() {
+        return timestamp;
     }
     
     public List<SinglePackagePingResult> getPingPackages() {

@@ -27,6 +27,8 @@ public class TracerouteDataBean extends NetDataBean {
         private int delay;
         @SerializedName("route_ip")
         private String routeIp;
+        @SerializedName("loss")
+        private int loss;
         
         public int getDelay() {
             return delay;
@@ -43,7 +45,15 @@ public class TracerouteDataBean extends NetDataBean {
         public void setRouteIp(String routeIp) {
             this.routeIp = routeIp;
         }
-        
+    
+        public int getLoss() {
+            return loss;
+        }
+    
+        public void setLoss(int loss) {
+            this.loss = loss;
+        }
+    
         @Override
         public String toString() {
             return new Gson().toJson(this);

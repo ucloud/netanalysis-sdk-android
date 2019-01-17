@@ -14,8 +14,10 @@ public class ReportPingBean extends UCReportBean {
     
     public ReportPingBean(String appKey, PingDataBean pingData, ReportPingTagBean tag, IpInfoBean ipInfo) {
         super(appKey, "ping", tag, ipInfo);
-        if (pingData != null)
+        if (pingData != null) {
+            this.timestamp = pingData.timestamp;
             this.pingData = new ReportPingData(pingData.getDelay(), pingData.getLoss());
+        }
     }
     
     public ReportPingData getPingData() {

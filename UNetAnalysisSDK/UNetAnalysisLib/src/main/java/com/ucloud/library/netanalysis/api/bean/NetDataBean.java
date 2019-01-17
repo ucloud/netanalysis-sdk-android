@@ -11,6 +11,8 @@ import com.google.gson.annotations.SerializedName;
 public class NetDataBean {
     @SerializedName("dst_ip")
     protected String dst_ip;
+    @SerializedName("timestamp")
+    protected long timestamp;
     
     public String getDst_ip() {
         return dst_ip;
@@ -18,6 +20,14 @@ public class NetDataBean {
     
     public void setDst_ip(String dst_ip) {
         this.dst_ip = dst_ip;
+    }
+    
+    public long getTimestamp() {
+        return timestamp;
+    }
+    
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
     
     @Override

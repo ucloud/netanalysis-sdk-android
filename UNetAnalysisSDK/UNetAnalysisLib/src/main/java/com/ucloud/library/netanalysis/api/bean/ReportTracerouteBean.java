@@ -16,8 +16,10 @@ public class ReportTracerouteBean extends UCReportBean {
     
     public ReportTracerouteBean(String appKey, TracerouteDataBean tracerouteData, ReportTracerouteTagBean tag, IpInfoBean ipInfo) {
         super(appKey, "traceroute", tag, ipInfo);
-        if (tracerouteData != null)
+        if (tracerouteData != null) {
+            this.timestamp = tracerouteData.timestamp;
             this.tracerouteData = new ReportTracerouteData(tracerouteData.getRouteInfoList());
+        }
     }
     
     public ReportTracerouteData getTracerouteData() {

@@ -20,7 +20,6 @@ public class UCReportBean extends UCApiBaseRequestBean {
     public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo) {
         super(appKey);
         this.action = action;
-        this.timestamp = System.currentTimeMillis() / 1000;
         this.tag = tag.makeReportString();
         this.ipInfo = ipInfo.makeReportString();
     }

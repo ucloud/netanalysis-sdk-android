@@ -111,7 +111,7 @@ final class UCApiManager {
      * @param reportAddress 上报接口地址
      * @param pingData      ping结果数据 {@link PingDataBean}
      * @param srcIpInfo     本地IP信息 {@link IpInfoBean}
-     * @param optionalParam  用户自定义信息{@link OptionalParam}
+     * @param optionalParam 用户自定义信息{@link OptionalParam}
      * @return response返回     {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
@@ -134,7 +134,7 @@ final class UCApiManager {
      * @param reportAddress  上报接口地址
      * @param tracerouteData traceroute结果数据 {@link TracerouteDataBean}
      * @param srcIpInfo      本地IP信息 {@link IpInfoBean}
-     * @param optionalParam   用户自定义信息{@link OptionalParam}
+     * @param optionalParam  用户自定义信息{@link OptionalParam}
      * @return response返回  {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */

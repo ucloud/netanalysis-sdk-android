@@ -22,15 +22,15 @@ public class TracerouteNodeResult extends UNetCommandResult {
     private String routeIp;
     @SerializedName("isFinalRoute")
     private boolean isFinalRoute;
-    @SerializedName("delaies")
-    protected List<Float> delaies;
+    @SerializedName("singleNodeList")
+    private List<SingleNodeResult> singleNodeList;
     
-    protected TracerouteNodeResult(String targetIp, int hop) {
+    protected TracerouteNodeResult(String targetIp, int hop, List<SingleNodeResult> singleNodeList) {
         super(targetIp);
         this.hop = hop;
         isFinalRoute = false;
         routeIp = "*";
-        delaies = new ArrayList<>();
+        setSingleNodeList(singleNodeList);
     }
     
     public int getHop() {
@@ -43,10 +43,6 @@ public class TracerouteNodeResult extends UNetCommandResult {
     
     public boolean isFinalRoute() {
         return isFinalRoute;
-    }
-    
-    public List<Float> getDelaies() {
-        return delaies;
     }
     
     TracerouteNodeResult setHop(int hop) {
@@ -65,23 +61,54 @@ public class TracerouteNodeResult extends UNetCommandResult {
         return this;
     }
     
-    TracerouteNodeResult setStatus(UCommandStatus status) {
-        this.status = status;
-        return this;
+    public List<SingleNodeResult> getSingleNodeList() {
+        return singleNodeList;
+    }
+    
+    void setSingleNodeList(List<SingleNodeResult> singleNodeList) {
+        this.singleNodeList = singleNodeList;
+        if (this.singleNodeList == null)
+            return;
+        
+        for (SingleNodeResult node : this.singleNodeList) {
+            if (!TextUtils.equals("*", node.getRouteIp())) {
+                setRouteIp(node.getRouteIp());
+                break;
+            }
+        }
     }
     
     public int averageDelay() {
+        if (singleNodeList == null || singleNodeList.isEmpty())
+            return 0;
+        
         int count = 0;
         float total = 0.f;
-        for (float delay : delaies) {
-            if (delay <= 0.f)
+        for (SingleNodeResult node : singleNodeList) {
+            if (node == null)
+                continue;
+            if (node.delay <= 0.f)
                 continue;
             
             count++;
-            total += delay;
+            total += node.delay;
         }
     
         return Math.round(total / count);
+    }
+    
+    public int lossRate() {
+        if (singleNodeList == null || singleNodeList.isEmpty())
+            return 100;
+        
+        int loss = 0;
+        float total = singleNodeList.size();
+        for (SingleNodeResult node : singleNodeList) {
+            if (node == null || node.getStatus() != UCommandStatus.CMD_STATUS_SUCCESSFUL || node.delay == 0.f)
+                loss++;
+        }
+        
+        return Math.round(loss / total * 100);
     }
     
     @Override

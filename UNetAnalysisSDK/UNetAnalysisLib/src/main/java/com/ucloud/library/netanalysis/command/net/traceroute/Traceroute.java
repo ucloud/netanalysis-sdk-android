@@ -58,10 +58,11 @@ public class Traceroute implements UCommandPerformer {
                     (callback instanceof TracerouteCallback2 ? (TracerouteCallback2) callback : null)));
         
         List<Future<TracerouteNodeResult>> futures = null;
+        long timestamp = System.currentTimeMillis();
         try {
             long start = SystemClock.elapsedRealtime();
             futures = threadPool.invokeAll(tasks);
-            JLog.T(TAG, "[invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
+            JLog.D(TAG, "[invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
         } catch (InterruptedException e) {
 //            e.printStackTrace();
         } finally {
@@ -73,15 +74,15 @@ public class Traceroute implements UCommandPerformer {
                     callback.onTracerouteFinish(null, UCommandStatus.CMD_STATUS_ERROR);
                 return;
             }
-            
-            TracerouteResult result = optResult(futures);
+    
+            TracerouteResult result = optResult(timestamp, futures);
             if (callback != null)
                 callback.onTracerouteFinish(result, isUserStop ? UCommandStatus.CMD_STATUS_USER_STOP : UCommandStatus.CMD_STATUS_SUCCESSFUL);
         }
     }
     
-    private TracerouteResult optResult(List<Future<TracerouteNodeResult>> futures) {
-        TracerouteResult result = new TracerouteResult(config.getTargetAddress().getHostAddress());
+    private TracerouteResult optResult(long timestamp, List<Future<TracerouteNodeResult>> futures) {
+        TracerouteResult result = new TracerouteResult(config.getTargetAddress().getHostAddress(), timestamp);
         for (int i = 0, len = futures.size(); i < len; i++) {
             Future<TracerouteNodeResult> future = futures.get(i);
             if (future == null)
@@ -133,9 +134,9 @@ public class Traceroute implements UCommandPerformer {
         
         public Config(@NonNull String targetHost) {
             this.targetHost = targetHost;
-            this.maxHop = 30;
+            this.maxHop = 32;
             this.countPerRoute = 3;
-            this.threadSize = 2;
+            this.threadSize = 3;
         }
         
         InetAddress getTargetAddress() {

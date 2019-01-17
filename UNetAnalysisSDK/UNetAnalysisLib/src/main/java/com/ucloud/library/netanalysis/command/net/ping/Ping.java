@@ -58,10 +58,11 @@ public class Ping implements UCommandPerformer {
         list.add(task);
         
         List<SinglePackagePingResult> results = null;
+        long timestamp = System.currentTimeMillis();
         try {
             long start = SystemClock.elapsedRealtime();
             results = threadPool.invokeAny(list);
-            JLog.T(TAG, "[invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
+            JLog.D(TAG, "[invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
         } catch (InterruptedException e) {
 //             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -75,15 +76,15 @@ public class Ping implements UCommandPerformer {
                     callback.onPingFinish(null, UCommandStatus.CMD_STATUS_ERROR);
                 return;
             }
-            
-            PingResult result = optResult(results);
+    
+            PingResult result = optResult(timestamp, results);
             if (callback != null)
                 callback.onPingFinish(result, isUserStop ? UCommandStatus.CMD_STATUS_USER_STOP : UCommandStatus.CMD_STATUS_SUCCESSFUL);
         }
     }
     
-    private PingResult optResult(List<SinglePackagePingResult> res) {
-        PingResult result = new PingResult(config.getTargetAddress().getHostAddress());
+    private PingResult optResult(long timestamp, List<SinglePackagePingResult> res) {
+        PingResult result = new PingResult(config.getTargetAddress().getHostAddress(), timestamp);
         if (res == null)
             return result;
         

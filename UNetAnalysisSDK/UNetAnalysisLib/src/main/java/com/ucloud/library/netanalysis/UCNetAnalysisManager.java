@@ -372,7 +372,7 @@ public class UCNetAnalysisManager {
     private void ping(String host, PingCallback callback) {
         if (TextUtils.isEmpty(host))
             throw new NullPointerException("The parameter (host) is null !");
-        Ping ping = new Ping(new Ping.Config(host).setCountPerRoute(3), callback);
+        Ping ping = new Ping(new Ping.Config(host, 5), callback);
         ping(ping);
     }
     
@@ -395,8 +395,7 @@ public class UCNetAnalysisManager {
     private void traceroute(String host, TracerouteCallback callback) {
         if (TextUtils.isEmpty(host))
             throw new NullPointerException("The parameter (host) is null !");
-        Traceroute traceroute = new Traceroute(
-                new Traceroute.Config(host).setMaxHop(25).setCountPerRoute(2),
+        Traceroute traceroute = new Traceroute(new Traceroute.Config(host).setThreadSize(5),
                 callback);
         traceroute(traceroute);
     }
@@ -579,6 +578,7 @@ public class UCNetAnalysisManager {
         reportArrdCache.addAll(reportAddr);
         
         PingDataBean report = new PingDataBean();
+        report.setTimestamp(result.getTimestamp());
         report.setDelay(result.averageDelay());
         report.setLoss(result.lossRate());
         report.setTTL(result.accessTTL());
@@ -608,7 +608,7 @@ public class UCNetAnalysisManager {
         
         List<IpListBean.InfoBean> list = mIpListCache.getInfo();
         for (IpListBean.InfoBean info : list)
-            traceroute(new Traceroute(new Traceroute.Config(info.getIp()).setCountPerRoute(2).setMaxHop(25),
+            traceroute(new Traceroute(new Traceroute.Config(info.getIp()).setThreadSize(5),
                     mReportTracerouteCallback));
         
         mCacheLock.unlock();
@@ -623,7 +623,7 @@ public class UCNetAnalysisManager {
         }
         
         for (String ip : mCustomIps)
-            traceroute(new Traceroute(new Traceroute.Config(ip).setCountPerRoute(2).setMaxHop(25),
+            traceroute(new Traceroute(new Traceroute.Config(ip).setThreadSize(5),
                     mReportTracerouteCallback));
         
         mCustomLock.unlock();
@@ -648,11 +648,13 @@ public class UCNetAnalysisManager {
         reportArrdCache.addAll(reportAddr);
         
         TracerouteDataBean report = new TracerouteDataBean();
+        report.setTimestamp(result.getTimestamp());
         List<TracerouteDataBean.RouteInfoBean> routeInfoBeans = new ArrayList<>();
         for (TracerouteNodeResult node : result.getTracerouteNodeResults()) {
             TracerouteDataBean.RouteInfoBean route = new TracerouteDataBean.RouteInfoBean();
             route.setRouteIp(node.getRouteIp());
             route.setDelay(node.averageDelay());
+            route.setLoss(node.lossRate());
             routeInfoBeans.add(route);
         }
         report.setRouteInfoList(routeInfoBeans);
