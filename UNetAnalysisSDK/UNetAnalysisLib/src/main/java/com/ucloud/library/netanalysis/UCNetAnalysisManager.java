@@ -157,8 +157,8 @@ public class UCNetAnalysisManager {
     public void register(OnSdkListener listener, OptionalParam optionalParam) {
         setSdkListener(listener);
         this.optionalParam = optionalParam;
-        
-        if (TextUtils.isEmpty(appSecret) || TextUtils.isEmpty(appSecret)) {
+    
+        if (TextUtils.isEmpty(appKey) || TextUtils.isEmpty(appSecret)) {
             if (mSdkListener != null)
                 mSdkListener.onRegister(UCSdkStatus.APPKEY_OR_APPSECRET_ILLEGAL);
             
