@@ -1,6 +1,5 @@
 package com.ucloud.library.netanalysis.command.net.ping;
 
-
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 
 /**

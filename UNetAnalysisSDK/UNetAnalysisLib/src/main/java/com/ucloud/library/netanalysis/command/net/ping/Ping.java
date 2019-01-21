@@ -58,7 +58,7 @@ public class Ping implements UCommandPerformer {
         list.add(task);
         
         List<SinglePackagePingResult> results = null;
-        long timestamp = System.currentTimeMillis();
+        long timestamp = System.currentTimeMillis() / 1000;
         try {
             long start = SystemClock.elapsedRealtime();
             results = threadPool.invokeAny(list);

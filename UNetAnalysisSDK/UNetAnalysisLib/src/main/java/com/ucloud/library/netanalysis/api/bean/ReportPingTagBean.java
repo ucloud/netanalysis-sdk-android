@@ -23,7 +23,6 @@ public class ReportPingTagBean extends ReportTagBean {
         this.TTL = TTL;
     }
     
-    
     public String getDstIp() {
         return dstIp;
     }

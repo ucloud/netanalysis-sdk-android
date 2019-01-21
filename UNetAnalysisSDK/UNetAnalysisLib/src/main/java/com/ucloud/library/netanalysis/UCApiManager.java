@@ -13,7 +13,6 @@ import com.ucloud.library.netanalysis.api.bean.ReportPingTagBean;
 import com.ucloud.library.netanalysis.api.bean.ReportTracerouteBean;
 import com.ucloud.library.netanalysis.api.bean.ReportTracerouteTagBean;
 import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
-import com.ucloud.library.netanalysis.api.bean.UCApiBaseRequestBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
 import com.ucloud.library.netanalysis.api.bean.IpListBean;
 import com.ucloud.library.netanalysis.api.bean.UCGetIpListRequestBean;
@@ -122,9 +121,12 @@ final class UCApiManager {
      * @return response返回     {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
+    Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, boolean isCustomIp,
+                                                           IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
+        ReportPingTagBean reportTag = new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL(), (optionalParam == null ? null : optionalParam.toString()));
+        reportTag.setCus(isCustomIp);
         ReportPingBean report = new ReportPingBean(appKey, pingData,
-                new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL(), (optionalParam == null ? null : optionalParam.toString()))
+                reportTag
                 , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
@@ -145,9 +147,12 @@ final class UCApiManager {
      * @return response返回  {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
+    Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, boolean isCustomIp,
+                                                                 IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
+        ReportTracerouteTagBean reportTag = new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip(), (optionalParam == null ? null : optionalParam.toString()));
+        reportTag.setCus(isCustomIp);
         ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
-                new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip(), (optionalParam == null ? null : optionalParam.toString()))
+                reportTag
                 , srcIpInfo);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);

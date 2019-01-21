@@ -39,12 +39,12 @@ public class ReportTagBean {
         return platform;
     }
     
-    public int getCus() {
-        return cus;
+    public boolean isCustomIp() {
+        return cus > 0;
     }
     
-    public void setCus(int cus) {
-        this.cus = cus;
+    public void setCus(boolean isCustomIp) {
+        this.cus = isCustomIp ? 1 : 0;
     }
     
     protected String makeReportString() {

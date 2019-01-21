@@ -147,7 +147,7 @@ public class IpInfoBean {
         sb.append(String.format(",country=%s", countryName));
         sb.append(String.format(",city=%s", city_name));
         sb.append(String.format(",isp=%s", isp_domain));
-        sb.append(String.format(",lat=%s", longitude));
+        sb.append(String.format(",lon=%s", longitude));
         sb.append(String.format(",lat=%s", latitude));
         sb.append(String.format(",owner=%s", owner_domain));
         sb.append(String.format(",net_type=%s", netType));

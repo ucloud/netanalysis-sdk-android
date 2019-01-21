@@ -58,7 +58,7 @@ public class Traceroute implements UCommandPerformer {
                     (callback instanceof TracerouteCallback2 ? (TracerouteCallback2) callback : null)));
         
         List<Future<TracerouteNodeResult>> futures = null;
-        long timestamp = System.currentTimeMillis();
+        long timestamp = System.currentTimeMillis() / 1000;
         try {
             long start = SystemClock.elapsedRealtime();
             futures = threadPool.invokeAll(tasks);
