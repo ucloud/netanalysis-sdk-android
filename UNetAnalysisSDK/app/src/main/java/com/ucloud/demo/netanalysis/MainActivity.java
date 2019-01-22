@@ -55,13 +55,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
-        OptionalParam param = null;
-        try {
-            param = new OptionalParam("optKey 1", "optValue 1");
-        } catch (UCParamVerifyException e) {
-            e.printStackTrace();
-        }
-        mUCNetAnalysisManager.register(this, param);
+    
         /**
          * 可以配置自定义需要检测的域名或IP地址
          */
@@ -88,7 +82,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         dialog.dismiss();
                     }
                 }).setCancelable(false);
-        
+    
+        findViewById(R.id.btn_register).setOnClickListener(this);
+        findViewById(R.id.btn_unregister).setOnClickListener(this);
         findViewById(R.id.btn_set_ips).setOnClickListener(this);
         findViewById(R.id.btn_analyse).setOnClickListener(this);
         findViewById(R.id.btn_net_status).setOnClickListener(this);
@@ -112,8 +108,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     
     @Override
-    protected void onDestroy() {
+    protected void onResume() {
+        super.onResume();
+        mUCNetAnalysisManager.register(this);
+    }
+    
+    @Override
+    protected void onStop() {
+        super.onStop();
         mUCNetAnalysisManager.unregister();
+    }
+    
+    @Override
+    protected void onDestroy() {
         UCNetAnalysisManager.destroy();
         super.onDestroy();
     }
@@ -121,6 +128,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.btn_register: {
+                OptionalParam param = null;
+                try {
+                    param = new OptionalParam("optValue 1");
+                } catch (UCParamVerifyException e) {
+                    e.printStackTrace();
+                }
+                mUCNetAnalysisManager.register(this, param);
+                break;
+            }
+            case R.id.btn_unregister: {
+                mUCNetAnalysisManager.unregister();
+                break;
+            }
             case R.id.btn_analyse: {
                 edit_host.clearFocus();
                 txt_result.setText("");

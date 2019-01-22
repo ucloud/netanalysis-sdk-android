@@ -13,28 +13,22 @@ import java.util.regex.Pattern;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class OptionalParam {
-    public static final int OPT_PARAM_KEY_LEN_LIMIT = 20;
-    public static final int OPT_PARAM_VALUE_LEN_LIMIT = 90;
+    public static final String DEFAULT_OPT_PARAM_KEY_NAME = "opt_key";
+    public static final int OPT_PARAM_KEY_LEN_LIMIT = 10;
+    public static final int OPT_PARAM_VALUE_LEN_LIMIT = 100;
     
     private static final String REGULAR = "(?<=,)|(?<==)";
     
-    private String key;
+    private String key = DEFAULT_OPT_PARAM_KEY_NAME;
     private String value;
     
-    public OptionalParam(String key, String value) throws UCParamVerifyException {
+    public OptionalParam(String value) throws UCParamVerifyException {
         checkParam(key, value);
-        this.key = key;
         this.value = value;
     }
     
     public String getKey() {
         return key;
-    }
-    
-    public OptionalParam setKey(String key) throws UCParamVerifyException {
-        checkParam(key, value);
-        this.key = key;
-        return this;
     }
     
     public String getValue() {
@@ -50,12 +44,12 @@ public class OptionalParam {
     private void checkParam(String key, String value) throws UCParamVerifyException {
         if (TextUtils.isEmpty(key))
             throw new UCParamVerifyException("The key can not be null or empty!");
-        
-        if (key.length() > 20)
+    
+        if (key.length() > OPT_PARAM_KEY_LEN_LIMIT)
             throw new UCParamVerifyException(String.format("The length of key is %d byte(s), the maximum length is %d bytes",
                     key.length(), OPT_PARAM_KEY_LEN_LIMIT));
-        
-        if (value.length() > 90)
+    
+        if (value.length() > OPT_PARAM_VALUE_LEN_LIMIT)
             throw new UCParamVerifyException(String.format("The length of value is %d byte(s), the maximum length is %d bytes",
                     value.length(), OPT_PARAM_VALUE_LEN_LIMIT));
         
