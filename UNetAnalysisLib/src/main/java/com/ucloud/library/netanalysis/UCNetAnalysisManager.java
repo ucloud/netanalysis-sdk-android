@@ -72,7 +72,6 @@ public class UCNetAnalysisManager {
     private final int MAX_CUSTOM_COMMAND_TASK_SIZE = 3;
     private static volatile UCNetAnalysisManager mInstance = null;
     private UCApiManager mApiManager;
-    private UCSharedPreferenceHolder mSpHolder = null;
     private Context mContext;
     
     private ExecutorService mAutoThreadPool;
@@ -98,7 +97,6 @@ public class UCNetAnalysisManager {
         this.mContext = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
-        this.mSpHolder = UCSharedPreferenceHolder.createHolder(mContext);
         this.mApiManager = new UCApiManager(mContext, appKey, appSecret);
         this.mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         this.mCacheLock = new ReentrantLock();

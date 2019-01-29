@@ -36,7 +36,7 @@ public class PermissionUtil {
 
         if (Build.VERSION.SDK_INT >= 23) {
             for (String per : permissions)
-                JLog.saveLog(TAG, "requestPermissions--->" + per);
+                JLog.T(TAG, "requestPermissions--->" + per);
 
             ActivityCompat.requestPermissions(activity, permissions, requestCode);
         }
@@ -46,7 +46,7 @@ public class PermissionUtil {
         if (Build.VERSION.SDK_INT >= 23) {
             boolean res = ActivityCompat.shouldShowRequestPermissionRationale(activity, permission);
             if (res)
-                JLog.saveLog(TAG, "shouldShowRequestPermissionRationale->[permission]: "
+                JLog.T(TAG, "shouldShowRequestPermissionRationale->[permission]: "
                         + permission);
             return res;
         }

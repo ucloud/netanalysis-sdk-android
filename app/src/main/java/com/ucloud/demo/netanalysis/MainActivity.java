@@ -47,15 +47,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private AppCompatEditText edit_host;
     private InputMethodManager imm;
     
-    private String appKey = UCloud为您的APP分配的APP_KEY;
-    private String appSecret = UCloud为您的APP分配的APP_SECRET;
+    private String appKey = "41bb155d-f067-5215-b496-252e30997247";
+    private String appSecret = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCY+RM+TrTHN9Ubus5Mvro4bmJw\nP+jP0QAJchxnukisrl6JwxiVWQk77WDV5Bizs1vXf3nqsLo3L4L1mXf5u/vqAWKQ\n+k9FsuWm9/xZrOpqGpENh6pI1OKjTdTLkvNykgZJOZ5vllHnZUxTWbUHZxeMwNdP\nfmLRx99uPb1P8Vxz+QIDAQAB\n-----END PUBLIC KEY-----";
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
-    
+        
         /**
          * 可以配置自定义需要检测的域名或IP地址
          */
@@ -82,9 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         dialog.dismiss();
                     }
                 }).setCancelable(false);
-    
-        findViewById(R.id.btn_register).setOnClickListener(this);
-        findViewById(R.id.btn_unregister).setOnClickListener(this);
+        
         findViewById(R.id.btn_set_ips).setOnClickListener(this);
         findViewById(R.id.btn_analyse).setOnClickListener(this);
         findViewById(R.id.btn_net_status).setOnClickListener(this);
@@ -110,7 +108,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        mUCNetAnalysisManager.register(this);
+        OptionalParam param = null;
+        try {
+            param = new OptionalParam("This is RC version demo test");
+        } catch (UCParamVerifyException e) {
+            e.printStackTrace();
+        }
+        mUCNetAnalysisManager.register(this, param);
     }
     
     @Override
@@ -128,20 +132,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_register: {
-                OptionalParam param = null;
-                try {
-                    param = new OptionalParam("This is RC version demo test");
-                } catch (UCParamVerifyException e) {
-                    e.printStackTrace();
-                }
-                mUCNetAnalysisManager.register(this, param);
-                break;
-            }
-            case R.id.btn_unregister: {
-                mUCNetAnalysisManager.unregister();
-                break;
-            }
             case R.id.btn_analyse: {
                 edit_host.clearFocus();
                 txt_result.setText("");

@@ -59,29 +59,6 @@
             android:padding="5dp">
 
             <Button
-                android:id="@+id/btn_register"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.5"
-                android:text="register" />
-
-            <Button
-                android:id="@+id/btn_unregister"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
-                android:layout_weight="0.5"
-                android:text="unregister" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:orientation="horizontal"
-            android:padding="5dp">
-
-            <Button
                 android:id="@+id/btn_set_ips"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
