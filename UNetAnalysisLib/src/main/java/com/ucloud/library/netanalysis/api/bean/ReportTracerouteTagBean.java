@@ -12,11 +12,7 @@ public class ReportTracerouteTagBean extends ReportTagBean {
     private String dstIp;
     
     public ReportTracerouteTagBean(String appId, String dstIp) {
-        this(appId, dstIp, null);
-    }
-    
-    public ReportTracerouteTagBean(String appId, String dstIp, String optionalData) {
-        super(appId, optionalData);
+        super(appId);
         this.dstIp = dstIp;
     }
     

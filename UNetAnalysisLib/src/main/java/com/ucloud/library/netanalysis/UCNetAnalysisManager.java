@@ -36,7 +36,6 @@ import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteCallback;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteNodeResult;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteResult;
 import com.ucloud.library.netanalysis.module.IpReport;
-import com.ucloud.library.netanalysis.module.OptionalParam;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetStatus;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
@@ -72,7 +71,6 @@ public class UCNetAnalysisManager {
     private final int MAX_CUSTOM_COMMAND_TASK_SIZE = 3;
     private static volatile UCNetAnalysisManager mInstance = null;
     private UCApiManager mApiManager;
-    private UCSharedPreferenceHolder mSpHolder = null;
     private Context mContext;
     
     private ExecutorService mAutoThreadPool;
@@ -92,13 +90,11 @@ public class UCNetAnalysisManager {
     
     private String appSecret;
     private String appKey;
-    private OptionalParam optionalParam;
     
     private UCNetAnalysisManager(Context context, String appKey, String appSecret) {
         this.mContext = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
-        this.mSpHolder = UCSharedPreferenceHolder.createHolder(mContext);
         this.mApiManager = new UCApiManager(mContext, appKey, appSecret);
         this.mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         this.mCacheLock = new ReentrantLock();
@@ -152,20 +148,15 @@ public class UCNetAnalysisManager {
     }
     
     public void register(OnSdkListener listener) {
-        register(listener, null);
-    }
-    
-    public void register(OnSdkListener listener, OptionalParam optionalParam) {
         setSdkListener(listener);
-        this.optionalParam = optionalParam;
     
         if (TextUtils.isEmpty(appKey) || TextUtils.isEmpty(appSecret)) {
             if (mSdkListener != null)
                 mSdkListener.onRegister(UCSdkStatus.APPKEY_OR_APPSECRET_ILLEGAL);
-            
+        
             return;
         }
-        
+    
         startMonitorNetStatus();
         if (mSdkListener != null)
             mSdkListener.onRegister(UCSdkStatus.REGISTER_SUCCESS);
@@ -640,7 +631,7 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, isCustomIp, mCurSrcIpInfo, optionalParam);
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, isCustomIp, mCurSrcIpInfo);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
@@ -736,7 +727,7 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, isCustomIp, mCurSrcIpInfo, optionalParam);
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, isCustomIp, mCurSrcIpInfo);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
