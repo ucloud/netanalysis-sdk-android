@@ -34,8 +34,6 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
 以下是NetAnalysis SDK所需要的Android权限，请确保您的AndroidManifest.xml文件中已经配置了这些权限，否则，SDK将无法正常工作。
 ``` xml
 <uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 ```
@@ -63,17 +61,8 @@ OnSdkListener sdkListener = new OnSdkListener() {
     }
 };
 
-// 可选的用户自定义上报字段
-try {
-    OptionalData optionalData = new OptionalData(new OptionalData.OptionalParam[]{});
-} catch(UCParamVerifyException e) {
-    e.printStackTrace();
-}
-
 // 注册sdk模块
-manager.register(sdkListener);      // 不配置自定义上报字段的注册
-// 或者
-manager.register(sdkListener, optionalData); // 配置自定义上报字段的注册
+manager.register(sdkListener);
 ```
 
 #### 2、配置你需要分析网络质量的IP地址或者域名
@@ -143,17 +132,6 @@ public void register(OnSdkListener listener)
     - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
 - **return**: -
 
-#### 注册UCNetAnalysisManager模块(带有用户自定义上报字段)
-``` java
-public void register(OnSdkListener listener, OptionalParam optionalParam)
-```
-
-- **param**: 
-    - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
-    - optionalParam: 用户自定义上报字段，详情见**OptionalParam**说明
-- **return**: -
-
-
 #### 设置Sdk回调接口
 ``` java
 public void setSdkListener(OnSdkListener listener)
@@ -214,32 +192,6 @@ public static void destroy()
 
 - **param**: -
 - **return**: -
-
-</br></br>
-### OptionalParam
-> 用户可选的自定义上报字段
-
-#### 注意事项
-- OptionalParam是(String-String)键值对，其中：
-    -  Key不能是null或者""。
-    -  Key的最大字符长度是20 bytes，Value的最大字符长度是90 bytes。
-    -  OptionalParam中Key和Value，均不可包含 ' **,** '（**包括英文以及全角和半角**） 和 ' **=** ' ，这两个字符。
-- 如果有不满足规则的OptionalParam，new OptionalParam()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
-- 该字段作为用户在查询上报数据时，可作为查询索引，故**不建议用户在Value中拼接多个值**。
-
-### 该SDK尊重客户和终端用户的隐私，请务必不要上传带有用户隐私信息，包括但不限于：用户手机号、用户身份证号、用户手机IMEI值、用户地址等敏感信息
-
-
-``` java 
-public class OptionalParam {
-    private String key;
-    private String value;
-        
-    public OptionalParam(String key, String value) throws UCParamVerifyException {
-        // 构造方法
-    }
-}
-```
 
 </br></br>
 ### OnSdkListener
