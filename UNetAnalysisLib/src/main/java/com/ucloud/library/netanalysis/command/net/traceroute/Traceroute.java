@@ -106,7 +106,7 @@ public class Traceroute implements UCommandPerformer {
     
     private void stopTask() {
         if (threadPool != null && !threadPool.isShutdown()) {
-            JLog.I(TAG, "shutdown--->" + config.targetHost);
+            JLog.D(TAG, "shutdown--->" + config.targetHost);
             threadPool.shutdownNow();
         }
     }
