@@ -1,9 +1,8 @@
 # UCloud NetAnalysis SDK for Android
 
-## 版本
-- Current Version：1.0.0
-
-</br></br> 
+[![](https://img.shields.io/github/release/ucloud/netanalysis-sdk-android.svg)](https://github.com/ucloud/netanalysis-sdk-android)
+[![](https://img.shields.io/github/last-commit/ucloud/netanalysis-sdk-android.svg)](https://github.com/ucloud/netanalysis-sdk-android)
+[![](https://img.shields.io/github/commits-since/ucloud/netanalysis-sdk-android/latest.svg)](https://github.com/ucloud/netanalysis-sdk-android)
 
 ## 运行环境
 ### Android
