@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_register: {
                 OptionalParam param = null;
                 try {
-                    param = new OptionalParam("optValue 1");
+                    param = new OptionalParam("This is RC version demo test");
                 } catch (UCParamVerifyException e) {
                     e.printStackTrace();
                 }
