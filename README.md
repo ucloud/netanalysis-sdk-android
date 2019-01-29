@@ -34,8 +34,6 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
 以下是NetAnalysis SDK所需要的Android权限，请确保您的AndroidManifest.xml文件中已经配置了这些权限，否则，SDK将无法正常工作。
 ``` xml
 <uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 ```
