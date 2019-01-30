@@ -79,7 +79,10 @@ List<String> ips = new ArrayList();
 ips.add("127.0.0.1");
 ips.add("127.0.0.2");
 ips.add("www.ucloud.cn");
-// 配置你想要监测的网络质量的ip/域名
+/*
+ * 配置你想要监测的网络质量的ip/域名
+ * 注意：不建议填写域名，而填写IP地址，若自定义列表中含有域名的，将默认取域名解析后的对应IP列表中的第一项。这样可能导致测试数据不准确！
+ */
 manager.setCustomIps(ips);
 ```
 
@@ -164,6 +167,8 @@ public void setSdkListener(OnSdkListener listener)
 ``` java
 public void setCustomIps(List<String> ips)
 ```
+
+##### 注意：不建议填写域名，而填写IP地址，若自定义列表中含有域名的，将默认取域名解析后的对应IP列表中的第一项。这样可能导致测试数据不准确！
 
 - **param**: 
     - ips:  自定义需要网络分析的IP地址或域名列表
