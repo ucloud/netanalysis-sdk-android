@@ -1,9 +1,10 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import android.text.TextUtils;
-
 import com.google.gson.annotations.SerializedName;
 import com.ucloud.library.netanalysis.UCNetAnalysisManager;
+
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Created by joshua on 2018/12/27 13:31.
@@ -19,9 +20,16 @@ public class ReportTagBean {
     protected final String sdkVersion = UCNetAnalysisManager.SDK_VERSION;
     @SerializedName("cus")
     protected int cus = 0;
+    @SerializedName("tz")
+    protected String tz;
     
     protected ReportTagBean(String appId) {
         this.appId = appId;
+        try {
+            this.tz = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
+        } catch (Exception e) {
+            this.tz = null;
+        }
     }
     
     public String getAppId() {
@@ -34,6 +42,10 @@ public class ReportTagBean {
     
     public int getPlatform() {
         return platform;
+    }
+    
+    public String getTimeZone() {
+        return tz;
     }
     
     public boolean isCustomIp() {
@@ -50,6 +62,7 @@ public class ReportTagBean {
         sb.append(String.format(",platform=%d", platform));
         sb.append(String.format(",s_ver=%s", sdkVersion));
         sb.append(String.format(",cus=%d", cus));
+        sb.append(String.format(",tz=%s", tz));
         return sb.toString();
     }
     
