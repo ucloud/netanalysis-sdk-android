@@ -5,6 +5,9 @@ import android.text.TextUtils;
 import com.google.gson.annotations.SerializedName;
 import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 
+import java.util.Locale;
+import java.util.TimeZone;
+
 /**
  * Created by joshua on 2018/12/27 13:31.
  * Company: UCloud
@@ -21,10 +24,17 @@ public class ReportTagBean {
     protected int cus = 0;
     @SerializedName("optional_data")
     protected String optionalData;
+    @SerializedName("tz")
+    protected String timeZone;
     
     protected ReportTagBean(String appId, String optionalData) {
         this.appId = appId;
         this.optionalData = optionalData;
+        try {
+            this.timeZone = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
+        } catch (Exception e) {
+            this.timeZone = null;
+        }
     }
     
     public String getAppId() {
@@ -37,6 +47,10 @@ public class ReportTagBean {
     
     public int getPlatform() {
         return platform;
+    }
+    
+    public String getTimeZone() {
+        return timeZone;
     }
     
     public boolean isCustomIp() {
@@ -53,6 +67,7 @@ public class ReportTagBean {
         sb.append(String.format(",platform=%d", platform));
         sb.append(String.format(",s_ver=%s", sdkVersion));
         sb.append(String.format(",cus=%d", cus));
+        sb.append(String.format(",tz=%s", timeZone));
         if (!TextUtils.isEmpty(optionalData))
             sb.append(String.format(",%s", optionalData));
         return sb.toString();

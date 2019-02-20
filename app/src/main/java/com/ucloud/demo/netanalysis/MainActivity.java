@@ -57,12 +57,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
         
         /**
-         * 可以配置自定义需要检测的域名或IP地址
+         * 可以配置自定义需要检测的IP地址
          */
         List<String> ips = new ArrayList<>();
-        ips.add("www.ucloud.cn");
-        ips.add("www.github.com");
-        ips.add("14.215.177.38");
+        ips.add("106.75.79.228");   // www.ucloud.cn
+        ips.add("115.239.210.27");  // www.baidu.com
         mUCNetAnalysisManager.setCustomIps(ips);
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         

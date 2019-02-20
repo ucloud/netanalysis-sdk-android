@@ -3,6 +3,7 @@ package com.ucloud.library.netanalysis.api.bean;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,10 +34,32 @@ public class ReportTracerouteBean extends UCReportBean {
     
     public static class ReportTracerouteData {
         @SerializedName("route_info")
-        private List<TracerouteDataBean.RouteInfoBean> routeInfoList;
+        private transient List<TracerouteDataBean.RouteInfoBean> routeInfoList;
+        @SerializedName("route_list")
+        private List<String> routeList;
+        @SerializedName("delay_list")
+        private List<Integer> delayList;
+        @SerializedName("loss_list")
+        private List<Integer> lossList;
         
         public ReportTracerouteData(List<TracerouteDataBean.RouteInfoBean> routeInfoList) {
             this.routeInfoList = routeInfoList;
+            makeReportData();
+        }
+        
+        private void makeReportData() {
+            routeList = new ArrayList<>();
+            delayList = new ArrayList<>();
+            lossList = new ArrayList<>();
+            if (routeInfoList == null || routeInfoList.isEmpty())
+                return;
+            
+            for (int i = 0, len = routeInfoList.size(); i < len; i++) {
+                TracerouteDataBean.RouteInfoBean route = routeInfoList.get(i);
+                routeList.add(route.getRouteIp());
+                delayList.add(route.getDelay());
+                lossList.add(route.getLoss());
+            }
         }
         
         public List<TracerouteDataBean.RouteInfoBean> getRouteInfoList() {
@@ -45,6 +68,7 @@ public class ReportTracerouteBean extends UCReportBean {
         
         public void setRouteInfoList(List<TracerouteDataBean.RouteInfoBean> routeInfoList) {
             this.routeInfoList = routeInfoList;
+            makeReportData();
         }
         
         @Override

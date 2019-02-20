@@ -65,7 +65,7 @@ import retrofit2.Response;
 public class UCNetAnalysisManager {
     private final String TAG = getClass().getSimpleName();
     
-    public static final String SDK_VERSION = String.format("Android/%s.%d", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE);
+    public static final String SDK_VERSION = BuildConfig.VERSION_NAME;
     public static final int CUSTOM_IP_LIST_SIZE = 5;
     
     private final int MAX_AUTO_COMMAND_TASK_SIZE = 2;
@@ -462,7 +462,7 @@ public class UCNetAnalysisManager {
             if (mSdkListener != null)
                 mSdkListener.onNetworkStatusChanged(info);
             
-            if (info == null || info.getNetStatus() == UCNetStatus.NET_STATUS_NOT_CONNECTED)
+            if (info == null || info.getNetStatus() == UCNetStatus.NET_STATUS_NOT_REACHABLE)
                 return;
             synchronized (flag) {
                 if (flag)
@@ -558,7 +558,7 @@ public class UCNetAnalysisManager {
             return false;
         
         Collections.shuffle(bean.getInfo(), new Random(SystemClock.elapsedRealtime()));
-        Collections.shuffle(bean.getUrl(), new Random(SystemClock.elapsedRealtime()));
+        
         return true;
     }
     
@@ -675,7 +675,7 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(0), report, isCustomIp, mCurSrcIpInfo, optionalParam);
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(i), report, isCustomIp, mCurSrcIpInfo, optionalParam);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
@@ -771,7 +771,7 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(0), report, isCustomIp, mCurSrcIpInfo, optionalParam);
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(i), report, isCustomIp, mCurSrcIpInfo, optionalParam);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)

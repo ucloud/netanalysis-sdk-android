@@ -338,7 +338,7 @@ public enum UCSdkStatus {
 ``` java
 public enum UCNetStatus {
     // 无网络连接
-    NET_STATUS_NOT_CONNECTED,
+    NET_STATUS_NOT_REACHABLE,
  
     // WIFI网络
     NET_STATUS_WIFI,
@@ -346,14 +346,8 @@ public enum UCNetStatus {
     // 4G网络
     NET_STATUS_4G,
  
-    // 3.5G网络
-    NET_STATUS_3_5G,
- 
     // 3G网络
     NET_STATUS_3G,
- 
-    // 2.5G网络
-    NET_STATUS_2_5G,
  
     // 2G网络
     NET_STATUS_2G,
