@@ -32,6 +32,7 @@ public class ReportTagBean {
         this.optionalData = optionalData;
         try {
             this.timezone = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
+            this.timezone = this.timezone.replace("GMT", "").replace(":", "");
         } catch (Exception e) {
             this.timezone = null;
         }
