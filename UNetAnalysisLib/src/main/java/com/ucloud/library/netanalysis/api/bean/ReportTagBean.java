@@ -25,15 +25,15 @@ public class ReportTagBean {
     @SerializedName("optional_data")
     protected String optionalData;
     @SerializedName("tz")
-    protected String timeZone;
+    protected String timezone;
     
     protected ReportTagBean(String appId, String optionalData) {
         this.appId = appId;
         this.optionalData = optionalData;
         try {
-            this.timeZone = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
+            this.timezone = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
         } catch (Exception e) {
-            this.timeZone = null;
+            this.timezone = null;
         }
     }
     
@@ -49,8 +49,8 @@ public class ReportTagBean {
         return platform;
     }
     
-    public String getTimeZone() {
-        return timeZone;
+    public String getTimezone() {
+        return timezone;
     }
     
     public boolean isCustomIp() {
@@ -67,7 +67,7 @@ public class ReportTagBean {
         sb.append(String.format(",platform=%d", platform));
         sb.append(String.format(",s_ver=%s", sdkVersion));
         sb.append(String.format(",cus=%d", cus));
-        sb.append(String.format(",tz=%s", (timeZone == null ? "" : timeZone)));
+        sb.append(String.format(",tz=%s", (timezone == null ? "" : timezone)));
         if (!TextUtils.isEmpty(optionalData))
             sb.append(String.format(",%s", optionalData));
         return sb.toString();
