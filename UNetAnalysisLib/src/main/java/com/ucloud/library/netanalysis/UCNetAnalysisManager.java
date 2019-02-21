@@ -64,7 +64,7 @@ import retrofit2.Response;
 public class UCNetAnalysisManager {
     private final String TAG = getClass().getSimpleName();
     
-    public static final String SDK_VERSION = BuildConfig.VERSION_NAME;
+    public static final String SDK_VERSION = String.format("Android/%s", BuildConfig.VERSION_NAME);
     public static final int CUSTOM_IP_LIST_SIZE = 5;
     
     private final int MAX_AUTO_COMMAND_TASK_SIZE = 2;

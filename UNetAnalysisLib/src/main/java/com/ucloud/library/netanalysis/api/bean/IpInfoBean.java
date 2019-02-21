@@ -12,7 +12,7 @@ public class IpInfoBean {
     @SerializedName("addr")
     private String ip;
     @SerializedName("cityName")
-    private String city_name;
+    private String cityName;
     @SerializedName("continentCode")
     private String continentCode;
     @SerializedName("country_code")
@@ -20,13 +20,13 @@ public class IpInfoBean {
     @SerializedName("country_name")
     private String countryName;
     @SerializedName("ispDomain")
-    private String isp_domain;
+    private String ispDomain;
     @SerializedName("latitude")
     private String latitude;
     @SerializedName("longitude")
     private String longitude;
     @SerializedName("ownerDomain")
-    private String owner_domain;
+    private String ownerDomain;
     @SerializedName("region_name")
     private String regionName;
     @SerializedName("timezone")
@@ -45,11 +45,11 @@ public class IpInfoBean {
     }
     
     public String getCity_name() {
-        return city_name;
+        return cityName;
     }
     
-    public void setCity_name(String city_name) {
-        this.city_name = city_name;
+    public void setCity_name(String cityName) {
+        this.cityName = cityName;
     }
     
     public String getContinentCode() {
@@ -77,11 +77,11 @@ public class IpInfoBean {
     }
     
     public String getIsp_domain() {
-        return isp_domain;
+        return ispDomain;
     }
     
-    public void setIsp_domain(String isp_domain) {
-        this.isp_domain = isp_domain;
+    public void setIsp_domain(String ispDomain) {
+        this.ispDomain = ispDomain;
     }
     
     public String getLatitude() {
@@ -101,11 +101,11 @@ public class IpInfoBean {
     }
     
     public String getOwner_domain() {
-        return owner_domain;
+        return ownerDomain;
     }
     
-    public void setOwner_domain(String owner_domain) {
-        this.owner_domain = owner_domain;
+    public void setOwner_domain(String ownerDomain) {
+        this.ownerDomain = ownerDomain;
     }
     
     public String getRegionName() {
@@ -142,15 +142,15 @@ public class IpInfoBean {
     
     protected String makeReportString() {
         StringBuffer sb = new StringBuffer();
-        sb.append(String.format("ip=%s", ip));
-        sb.append(String.format(",region=%s", regionName));
-        sb.append(String.format(",country=%s", countryName));
-        sb.append(String.format(",city=%s", city_name));
-        sb.append(String.format(",isp=%s", isp_domain));
-        sb.append(String.format(",lon=%s", longitude));
-        sb.append(String.format(",lat=%s", latitude));
-        sb.append(String.format(",owner=%s", owner_domain));
-        sb.append(String.format(",net_type=%s", netType));
+        sb.append(String.format("ip=%s", (ip == null ? "" : ip)));
+        sb.append(String.format(",region=%s", (regionName == null ? "" : regionName)));
+        sb.append(String.format(",country=%s", (countryName == null ? "" : countryName)));
+        sb.append(String.format(",city=%s", (cityName == null ? "" : cityName)));
+        sb.append(String.format(",isp=%s", (ispDomain == null ? "" : ispDomain)));
+        sb.append(String.format(",lon=%s", (longitude == null ? "" : longitude)));
+        sb.append(String.format(",lat=%s", (latitude == null ? "" : latitude)));
+        sb.append(String.format(",owner=%s", (ownerDomain == null ? "" : ownerDomain)));
+        sb.append(String.format(",net_type=%s", (netType == null ? "" : netType)));
         return sb.toString();
     }
     
