@@ -21,14 +21,14 @@ public class ReportTagBean {
     @SerializedName("cus")
     protected int cus = 0;
     @SerializedName("tz")
-    protected String tz;
+    protected String timezone;
     
     protected ReportTagBean(String appId) {
         this.appId = appId;
         try {
-            this.tz = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
+            this.timezone = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
         } catch (Exception e) {
-            this.tz = null;
+            this.timezone = null;
         }
     }
     
@@ -44,8 +44,8 @@ public class ReportTagBean {
         return platform;
     }
     
-    public String getTimeZone() {
-        return tz;
+    public String getTimezone() {
+        return timezone;
     }
     
     public boolean isCustomIp() {
@@ -62,7 +62,7 @@ public class ReportTagBean {
         sb.append(String.format(",platform=%d", platform));
         sb.append(String.format(",s_ver=%s", sdkVersion));
         sb.append(String.format(",cus=%d", cus));
-        sb.append(String.format(",tz=%s", (tz == null ? "" : tz)));
+        sb.append(String.format(",tz=%s", (timezone == null ? "" : timezone)));
         return sb.toString();
     }
     

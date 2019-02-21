@@ -11,21 +11,21 @@ import com.google.gson.annotations.SerializedName;
 public class IpInfoBean {
     @SerializedName("addr")
     private String ip;
-    @SerializedName("cityName")
+    @SerializedName("city_name")
     private String cityName;
-    @SerializedName("continentCode")
+    @SerializedName("continent_code")
     private String continentCode;
     @SerializedName("country_code")
     private String countryCode;
     @SerializedName("country_name")
     private String countryName;
-    @SerializedName("ispDomain")
+    @SerializedName("isp_domain")
     private String ispDomain;
     @SerializedName("latitude")
     private String latitude;
     @SerializedName("longitude")
     private String longitude;
-    @SerializedName("ownerDomain")
+    @SerializedName("owner_domain")
     private String ownerDomain;
     @SerializedName("region_name")
     private String regionName;
@@ -44,11 +44,11 @@ public class IpInfoBean {
         this.ip = ip;
     }
     
-    public String getCity_name() {
+    public String getCityName() {
         return cityName;
     }
     
-    public void setCity_name(String cityName) {
+    public void setCityName(String cityName) {
         this.cityName = cityName;
     }
     
@@ -76,11 +76,11 @@ public class IpInfoBean {
         this.countryName = countryName;
     }
     
-    public String getIsp_domain() {
+    public String getIspDomain() {
         return ispDomain;
     }
     
-    public void setIsp_domain(String ispDomain) {
+    public void setIspDomain(String ispDomain) {
         this.ispDomain = ispDomain;
     }
     
@@ -100,11 +100,11 @@ public class IpInfoBean {
         this.longitude = longitude;
     }
     
-    public String getOwner_domain() {
+    public String getOwnerDomain() {
         return ownerDomain;
     }
     
-    public void setOwner_domain(String ownerDomain) {
+    public void setOwnerDomain(String ownerDomain) {
         this.ownerDomain = ownerDomain;
     }
     
