@@ -41,7 +41,7 @@ public class ReportPingTagBean extends ReportTagBean {
     
     protected String makeReportString() {
         StringBuffer sb = new StringBuffer(super.makeReportString());
-        sb.append(String.format(",dst_ip=%s", dstIp));
+        sb.append(String.format(",dst_ip=%s", (dstIp == null ? "" : dstIp)));
         sb.append(String.format(",TTL=%d", TTL));
         return sb.toString();
     }

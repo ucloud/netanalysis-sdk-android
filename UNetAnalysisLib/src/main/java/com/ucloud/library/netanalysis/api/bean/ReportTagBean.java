@@ -67,7 +67,7 @@ public class ReportTagBean {
         sb.append(String.format(",platform=%d", platform));
         sb.append(String.format(",s_ver=%s", sdkVersion));
         sb.append(String.format(",cus=%d", cus));
-        sb.append(String.format(",tz=%s", timeZone));
+        sb.append(String.format(",tz=%s", (timeZone == null ? "" : timeZone)));
         if (!TextUtils.isEmpty(optionalData))
             sb.append(String.format(",%s", optionalData));
         return sb.toString();
