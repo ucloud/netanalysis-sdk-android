@@ -29,17 +29,13 @@ import android.telephony.TelephonyManager;
  */
 public enum UCNetStatus {
     /** 无网络连接 */
-    NET_STATUS_NOT_CONNECTED("UNCONNECT"),
+    NET_STATUS_NOT_REACHABLE("NOT_REACHABLE"),
     /** WIFI网络 */
     NET_STATUS_WIFI("WIFI"),
     /** 4G网络 */
     NET_STATUS_4G("4G"),
-    /** 3.5G网络 */
-    NET_STATUS_3_5G("3.5G"),
     /** 3G网络 */
     NET_STATUS_3G("3G"),
-    /** 2.5G网络 */
-    NET_STATUS_2_5G("2.5G"),
     /** 2G网络 */
     NET_STATUS_2G("2G"),
     /** 未知类型 */
@@ -57,7 +53,7 @@ public enum UCNetStatus {
     
     public static UCNetStatus parseStatusByNetworkInfo(NetworkInfo networkInfo) {
         if (networkInfo == null)
-            return NET_STATUS_NOT_CONNECTED;
+            return NET_STATUS_NOT_REACHABLE;
         
         if (ConnectivityManager.TYPE_WIFI == networkInfo.getType())
             return NET_STATUS_WIFI;
@@ -67,10 +63,9 @@ public enum UCNetStatus {
             case TelephonyManager.NETWORK_TYPE_1xRTT:
             case TelephonyManager.NETWORK_TYPE_IDEN:
             case TelephonyManager.NETWORK_TYPE_GSM:
-                return NET_STATUS_2G;
             case TelephonyManager.NETWORK_TYPE_GPRS:
             case TelephonyManager.NETWORK_TYPE_EDGE:
-                return NET_STATUS_2_5G;
+                return NET_STATUS_2G;
             case TelephonyManager.NETWORK_TYPE_TD_SCDMA:
             case TelephonyManager.NETWORK_TYPE_UMTS:
             case TelephonyManager.NETWORK_TYPE_EVDO_0:
@@ -79,10 +74,9 @@ public enum UCNetStatus {
             case TelephonyManager.NETWORK_TYPE_EVDO_B:
             case TelephonyManager.NETWORK_TYPE_EHRPD:
             case TelephonyManager.NETWORK_TYPE_HSPAP:
-                return NET_STATUS_3G;
             case TelephonyManager.NETWORK_TYPE_HSDPA:
             case TelephonyManager.NETWORK_TYPE_HSUPA:
-                return NET_STATUS_3_5G;
+                return NET_STATUS_3G;
             case TelephonyManager.NETWORK_TYPE_IWLAN:
             case TelephonyManager.NETWORK_TYPE_LTE:
                 return NET_STATUS_4G;
