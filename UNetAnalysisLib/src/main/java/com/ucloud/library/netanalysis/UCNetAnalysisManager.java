@@ -479,7 +479,6 @@ public class UCNetAnalysisManager {
                 if (response == null || response.body() == null)
                     return;
                 
-                JLog.D(TAG, "[ip info]:" + response.body());
                 mCurSrcIpInfo = response.body().getIpInfo();
                 mCurSrcIpInfo.setNetType(checkNetworkStatus().getNetStatus().getValue());
                 doGetIpList();
