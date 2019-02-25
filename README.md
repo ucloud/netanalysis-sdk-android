@@ -37,6 +37,42 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
 <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 ```
 
+</br>
+### Proguard
+
+> 如果您的项目最终需要混淆编译，那么请参考UNetAnalysisLib模块下的[proguard-rules.pro](https://github.com/ucloud/netanalysis-sdk-android/blob/master/UNetAnalysisLib/proguard-rules.pro)文件
+
+- 主要内容：
+
+    ``` proguard
+    # com.ucloud.library.netanalysislib.**
+    -keep class com.ucloud.library.netanalysis.** {
+        public <fields>;
+        public <methods>;
+    }
+    
+    # -------------------------------------------------------------
+    # Retrofit2
+    -keep class * extends retrofit2.Callback {
+        *;
+    }
+    
+    # -------------------------------------------------------------
+    # Gson
+    -keep class com.google.gson.** {
+        *;
+    }
+    
+    # -------------------------------------------------------------
+    # Also keep - Enumerations. Keep the special static methods that are required in
+    # enumeration classes.
+    -keepclassmembers enum * {
+        public static **[] values();
+        public static ** valueOf(java.lang.String);
+    }
+    ```
+
+
 </br></br>
 
 ### 快速接入
