@@ -51,9 +51,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 final class UCApiManager {
     private final String TAG = this.getClass().getSimpleName();
     
-    public static final long DEFAULT_CONNECT_TIMEOUT = 5 * 1000;
-    public static final long DEFAULT_WRITE_TIMEOUT = 10 * 1000;
-    public static final long DEFAULT_READ_TIMEOUT = 10 * 1000;
+    public static final long DEFAULT_CONNECT_TIMEOUT = 20 * 1000;
+    public static final long DEFAULT_WRITE_TIMEOUT = 20 * 1000;
+    public static final long DEFAULT_READ_TIMEOUT = 20 * 1000;
     
     private Context context;
     private OkHttpClient okHttpClient;
