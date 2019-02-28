@@ -97,16 +97,17 @@ OnSdkListener sdkListener = new OnSdkListener() {
 };
 
 // 可选的用户自定义上报字段
+OptionalParam param = null;
 try {
-    OptionalData optionalData = new OptionalData(new OptionalData.OptionalParam[]{});
-} catch(UCParamVerifyException e) {
+    param = new OptionalParam("This is an optional parameter");
+} catch (UCParamVerifyException e) {
     e.printStackTrace();
 }
 
 // 注册sdk模块
 manager.register(sdkListener);      // 不配置自定义上报字段的注册
 // 或者
-manager.register(sdkListener, optionalData); // 配置自定义上报字段的注册
+manager.register(sdkListener, param); // 配置自定义上报字段的注册
 ```
 
 #### 2、配置你需要分析网络质量的IP地址或者域名
@@ -257,27 +258,25 @@ public static void destroy()
 ### OptionalParam
 > 用户可选的自定义上报字段
 
+``` java 
+public class OptionalParam {
+
+    public OptionalParam(String value) throws UCParamVerifyException {
+        // 构造方法
+    }
+}
+```
+
 #### 注意事项
 - OptionalParam是(String-String)键值对，其中：
-    -  Key不能是null或者""。
-    -  Key的最大字符长度是20 bytes，Value的最大字符长度是90 bytes。
-    -  OptionalParam中Key和Value，均不可包含 ' **,** '（**包括英文以及全角和半角**） 和 ' **=** ' ，这两个字符。
+    -  Key为"opt_key"，且不可修改。
+    -  Value的最大字符长度是100 bytes。
+    -  Value不可包含 ' **,** '（**包括全角和半角**） 和 ' **=** ' ，这两个字符。
 - 如果有不满足规则的OptionalParam，new OptionalParam()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
 - 该字段作为用户在查询上报数据时，可作为查询索引，故**不建议用户在Value中拼接多个值**。
 
 ### 该SDK尊重客户和终端用户的隐私，请务必不要上传带有用户隐私信息，包括但不限于：用户手机号、用户身份证号、用户手机IMEI值、用户地址等敏感信息
 
-
-``` java 
-public class OptionalParam {
-    private String key;
-    private String value;
-        
-    public OptionalParam(String key, String value) throws UCParamVerifyException {
-        // 构造方法
-    }
-}
-```
 
 </br></br>
 ### OnSdkListener
