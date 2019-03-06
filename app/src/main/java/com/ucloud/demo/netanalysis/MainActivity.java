@@ -92,6 +92,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     sb.append(ip + "\n");
         
         edit_host.setText(sb.toString().trim());
+    
+        mUCNetAnalysisManager.register(this);
     }
     
     private synchronized Handler getHandler() {
@@ -105,17 +107,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        mUCNetAnalysisManager.register(this);
     }
     
     @Override
     protected void onStop() {
         super.onStop();
-        mUCNetAnalysisManager.unregister();
     }
     
     @Override
     protected void onDestroy() {
+        mUCNetAnalysisManager.unregister();
         UCNetAnalysisManager.destroy();
         super.onDestroy();
     }

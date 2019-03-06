@@ -141,6 +141,7 @@ public class UCNetAnalysisManager {
         
         clearIpList();
         stopMonitorNetStatus();
+        System.gc();
     }
     
     public void setSdkListener(OnSdkListener listener) {
@@ -177,6 +178,7 @@ public class UCNetAnalysisManager {
             }
         }
         mCustomLock.unlock();
+        System.gc();
         
         enqueueCustom();
     }
@@ -209,7 +211,8 @@ public class UCNetAnalysisManager {
         
         if (mCustomThreadPool != null)
             mCustomThreadPool.shutdownNow();
-        
+    
+        System.gc();
         mCustomThreadPool = Executors.newFixedThreadPool(MAX_CUSTOM_COMMAND_TASK_SIZE);
         mCustomThreadPool.execute(new CustomAnalyseRunner(mCustomAnalyseListener));
     }
@@ -468,6 +471,7 @@ public class UCNetAnalysisManager {
             mAutoThreadPool = Executors.newSingleThreadExecutor();
             
             clearIpList();
+            System.gc();
             doGetPublicIpInfo();
         }
     }
