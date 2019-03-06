@@ -80,6 +80,7 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
 ### makeJar
 * 在`SDK项目根目录`/UNetAnalysisLib/build.gradle 中有`makeJar`和`makeProguardJar`两个task，分别是编译普通jar和混淆后的jar
 * 图解：
+
     ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155134.png)
     ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155422.png)
     
