@@ -14,7 +14,7 @@ public class JLog {
     
     private boolean isSaveLog = false;
     
-    private static boolean SHOW_TEST = false;
+    public static boolean SHOW_TEST = false;
     public static boolean SHOW_DEBUG = false;
     public static boolean SHOW_VERBOSE = true;
     public static boolean SHOW_INFO = true;

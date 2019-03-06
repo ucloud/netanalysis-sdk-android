@@ -27,6 +27,9 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
     }
     ```
 
+- 也可以下载第三方库Jar包集合：[netanalysissdk-3rd-part-jars.zip](http://ucloud-jar.cn-sh2.ufileos.com/netanalysissdk-3rd-part-jars.zip)
+
+
 </br>
 
 ### 系统权限设置
@@ -73,7 +76,17 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
     }
     ```
 
+</br>
 
+### makeJar
+* 在`SDK项目根目录`/UNetAnalysisLib/build.gradle 中有`makeJar`和`makeProguardJar`两个task，分别是编译普通jar和混淆后的jar
+* 图解：
+    
+    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155134.png)
+    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155422.png)
+    
+    
+    
 </br></br>
 
 ### 快速接入
@@ -354,11 +367,16 @@ public enum UCNetStatus {
 
 ``` java
 public class JLog {
+    public static boolean SHOW_TEST = false;
     public static boolean SHOW_DEBUG = false;
     public static boolean SHOW_VERBOSE = true;
     public static boolean SHOW_INFO = true;
     public static boolean SHOW_WARN = true;
     public static boolean SHOW_ERROR = true;
+    
+    public static void T(String TAG, String info) {
+        // ...
+    }
     
     public static void D(String TAG, String info) {
         // ...
