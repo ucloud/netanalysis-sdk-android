@@ -94,6 +94,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     sb.append(ip + "\n");
         
         edit_host.setText(sb.toString().trim());
+        
+        OptionalParam param = null;
+        try {
+            param = new OptionalParam("This is RC version demo test");
+        } catch (UCParamVerifyException e) {
+            e.printStackTrace();
+        }
+        mUCNetAnalysisManager.register(this, param);
     }
     
     private synchronized Handler getHandler() {
@@ -107,23 +115,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        OptionalParam param = null;
-        try {
-            param = new OptionalParam("This is RC version demo test");
-        } catch (UCParamVerifyException e) {
-            e.printStackTrace();
-        }
-        mUCNetAnalysisManager.register(this, param);
     }
     
     @Override
     protected void onStop() {
         super.onStop();
-        mUCNetAnalysisManager.unregister();
     }
     
     @Override
     protected void onDestroy() {
+        mUCNetAnalysisManager.unregister();
         UCNetAnalysisManager.destroy();
         super.onDestroy();
     }

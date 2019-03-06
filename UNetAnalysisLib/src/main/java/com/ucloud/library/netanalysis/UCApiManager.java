@@ -57,8 +57,6 @@ final class UCApiManager {
     public static final long DEFAULT_READ_TIMEOUT = 20 * 1000;
     
     private Context context;
-    private OkHttpClient okHttpClient;
-    private Retrofit retrofit;
     private NetAnalysisApiService apiService;
     
     private String appKey;
@@ -68,15 +66,15 @@ final class UCApiManager {
         this.context = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
-        
-        okHttpClient = new OkHttpClient.Builder()
+    
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
                 .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
                 .addInterceptor(new UCInterceptor())
                 .build();
-        
-        retrofit = new Retrofit.Builder()
+    
+        Retrofit retrofit = new Retrofit.Builder()
                 .client(okHttpClient)
                 .baseUrl(BuildConfig.UCLOUD_API_IP_LIST)
                 .addConverterFactory(GsonConverterFactory.create())

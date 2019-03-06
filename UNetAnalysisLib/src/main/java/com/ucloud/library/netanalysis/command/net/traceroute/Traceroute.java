@@ -180,7 +180,7 @@ public class Traceroute implements UCommandPerformer {
         }
         
         public Config setThreadSize(int threadSize) {
-            this.threadSize = Math.max(1, Math.min(threadSize, 5));
+            this.threadSize = Math.max(1, Math.min(threadSize, 3));
             return this;
         }
     }
