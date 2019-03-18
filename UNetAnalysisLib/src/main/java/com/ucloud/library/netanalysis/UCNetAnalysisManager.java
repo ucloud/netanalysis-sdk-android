@@ -211,7 +211,7 @@ public class UCNetAnalysisManager {
         
         if (mCustomThreadPool != null)
             mCustomThreadPool.shutdownNow();
-    
+        
         System.gc();
         mCustomThreadPool = Executors.newFixedThreadPool(MAX_CUSTOM_COMMAND_TASK_SIZE);
         mCustomThreadPool.execute(new CustomAnalyseRunner(mCustomAnalyseListener));
@@ -292,10 +292,12 @@ public class UCNetAnalysisManager {
     public UCNetworkInfo checkNetworkStatus() {
         ConnectivityManager connMgr = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = null;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            networkInfo = connMgr.getActiveNetworkInfo();
-        } else {
-            networkInfo = checkNetworkStatus_api23_up(connMgr);
+        if (connMgr != null) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                networkInfo = connMgr.getActiveNetworkInfo();
+            } else {
+                networkInfo = checkNetworkStatus_api23_up(connMgr);
+            }
         }
         JLog.T(TAG, "networkInfo--->" + (networkInfo == null ? "networkInfo = null" : networkInfo.toString()));
         UCNetworkInfo info = new UCNetworkInfo(networkInfo);
@@ -311,9 +313,8 @@ public class UCNetAnalysisManager {
                     info.setSignalStrength(wifiInfo.getRssi());
                 }
             } else if (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
+                int strength = 0;
                 if (mMobileSignalStrength != null) {
-                    
-                    int strength = 0;
                     if (mMobileSignalStrength.isGsm()) {
                         if (mMobileSignalStrength.getGsmSignalStrength() != 99)
                             strength = mMobileSignalStrength.getGsmSignalStrength() * 2 - 113;
@@ -322,10 +323,9 @@ public class UCNetAnalysisManager {
                     } else {
                         strength = mMobileSignalStrength.getCdmaDbm();
                     }
-                    
-                    JLog.T(TAG, "[strength]:" + strength + " dbm");
-                    info.setSignalStrength(strength);
                 }
+                JLog.T(TAG, "[strength]:" + strength + " dbm");
+                info.setSignalStrength(strength);
             }
         }
         
