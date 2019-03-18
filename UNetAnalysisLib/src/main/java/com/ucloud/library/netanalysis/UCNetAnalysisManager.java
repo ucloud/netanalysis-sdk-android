@@ -126,7 +126,6 @@ public class UCNetAnalysisManager {
     public static void destroy() {
         if (mInstance != null) {
             mInstance.destroyObj();
-            mInstance.mContext = null;
         }
         
         mInstance = null;
