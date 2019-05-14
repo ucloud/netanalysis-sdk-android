@@ -110,7 +110,7 @@ OnSdkListener sdkListener = new OnSdkListener() {
     }
 };
 
-// 注册sdk模块
+// 注册sdk模块，注册成功后，若当前存在可用网络，将会自动开始检测网络质量
 manager.register(sdkListener);
 ```
 
@@ -119,26 +119,14 @@ manager.register(sdkListener);
 List<String> ips = new ArrayList();
 ips.add("127.0.0.1");
 ips.add("127.0.0.2");
-ips.add("www.ucloud.cn");
 /*
  * 配置你想要监测的网络质量的ip/域名
- * 注意：不建议填写域名，而填写IP地址，若自定义列表中含有域名的，将默认取域名解析后的对应IP列表中的第一项。这样可能导致测试数据不准确！
+ * 注意：不支持填写域名，请填写IP地址
  */
 manager.setCustomIps(ips);
 ```
 
-#### 3、开始分析你所配置的IP地址或者域名的网络质量
-``` java
-// 开始网络质量分析，将会分析你刚才配置的ip/域名
-manager.analyse(new OnAnalyseListener() {
-        @Override
-        public void onAnalysed(UCAnalysisResult result) {
-            // result：分析结果，详情见 UCAnalysisResult 说明
-        }
-    });
-```
-
-#### 4、在你的应用退出时，注销并销毁UCNetAnalysisManager
+#### 3、在你的应用退出时，注销并销毁UCNetAnalysisManager
 ``` java
 @Override
 protected void onDestroy(){
@@ -176,6 +164,8 @@ public static UCNetAnalysisManager getManager()
 - **return**: UCNetAnalysisManager单例对象，若未调用createManager，则return为null
 
 #### 注册UCNetAnalysisManager模块
+- 注册成功后，若当前存在可用网络，将会自动开始检测网络质量
+
 ``` java
 public void register(OnSdkListener listener)
 ```
@@ -193,34 +183,25 @@ public void setSdkListener(OnSdkListener listener)
     - listener:  OnSdkListener回调接口，详情见**OnSdkListener**说明
 - **return**: -
 
-#### 设置自定义的IP地址或域名
+#### 设置自定义的IP地址
 ``` java
 public void setCustomIps(List<String> ips)
 ```
 
-##### 注意：不建议填写域名，而填写IP地址，若自定义列表中含有域名的，将默认取域名解析后的对应IP列表中的第一项。这样可能导致测试数据不准确！
+##### 注意：不支持填写域名，请填写IP地址
 
 - **param**: 
-    - ips:  自定义需要网络分析的IP地址或域名列表
+    - ips:  自定义需要网络分析的IP地址列表
 - **return**: -
 
-#### 获取已设置的自定义的IP地址或域名
+#### 获取已设置的自定义的IP地址
 ``` java
 public List<String> getCustomIps()
 ```
 
 - **param**: -
 - **return**: 
-    - List<String>:  已设置的需要网络分析的IP地址或域名列表
-
-#### 执行网络质量诊断
-``` java
-public void analyse(OnAnalyseListener listener)
-```
-
-- **param**: 
-    - listener:  网络质量诊断结果回调接口，详情见**OnAnalyseListener**说明
-- **return**: -
+    - List<String>:  已设置的需要网络分析的IP地址列表
 
 #### 检查当前设备网络状态
 ``` java
@@ -261,47 +242,6 @@ public interface OnSdkListener {
 }
 ```
 
-</br></br>
-### OnAnalyseListener
-> UCNetAnalysisManager模块，网络质量分析接口的回调
-
-``` java
-public interface OnAnalyseListener {
-    // 网络质量分析结果回调，result详情见UCAnalysisResult
-    void onAnalysed(UCAnalysisResult result);
-}
-```
-
-</br></br>
-### UCAnalysisResult
-> 网络质量分析结果
-
-``` java
-public class UCAnalysisResult {
-    // 自定义IP地址或域名列表的分析结果
-    private List<IpReport> ipReports;
-}
-```
-
-</br></br>
-### IpReport
-> 自定义IP地址或域名的分析结果
-
-``` java
-public class IpReport {
-    // 目标IP
-    private String ip;
- 
-    // 平均延时（毫秒）
-    private int averageDelay;
- 
-    // 丢包率（0~100）
-    private int packageLossRate;
- 
-    // 诊断该IP时的网络情况
-    private UCNetStatus netStatus;
-}
-```
 
 </br></br>
 ### UCNetworkInfo
