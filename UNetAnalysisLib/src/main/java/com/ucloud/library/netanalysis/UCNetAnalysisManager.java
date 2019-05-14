@@ -479,8 +479,10 @@ public class UCNetAnalysisManager {
         mApiManager.apiGetPublicIpInfo(new Callback<PublicIpBean>() {
             @Override
             public void onResponse(Call<PublicIpBean> call, Response<PublicIpBean> response) {
-                if (response == null || response.body() == null)
+                if (response == null || response.body() == null) {
+                    JLog.I(TAG, "apiGetPublicIpInfo: response is null");
                     return;
+                }
                 
                 mCurSrcIpInfo = response.body().getIpInfo();
                 mCurSrcIpInfo.setNetType(checkNetworkStatus().getNetStatus().getValue());
@@ -492,6 +494,7 @@ public class UCNetAnalysisManager {
             
             @Override
             public void onFailure(Call<PublicIpBean> call, Throwable t) {
+                JLog.I(TAG, "apiGetPublicIpInfo failed:", t);
                 synchronized (flag) {
                     flag = false;
                 }
@@ -503,12 +506,16 @@ public class UCNetAnalysisManager {
         mApiManager.apiGetPingList(mCurSrcIpInfo, new Callback<UCApiResponseBean<IpListBean>>() {
             @Override
             public void onResponse(Call<UCApiResponseBean<IpListBean>> call, Response<UCApiResponseBean<IpListBean>> response) {
-                if (response == null || response.body() == null)
+                if (response == null || response.body() == null) {
+                    JLog.I(TAG, "apiGetPingList: response is null");
                     return;
+                }
                 
                 UCApiResponseBean<IpListBean> body = response.body();
-                if (body == null)
+                if (body == null) {
+                    JLog.I(TAG, "apiGetPingList: body is null");
                     return;
+                }
                 
                 if (body.getMeta() == null) {
                     if (body.getMeta().getCode() != 200)

@@ -1,7 +1,6 @@
 package com.ucloud.demo.netanalysis;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Looper;
@@ -11,7 +10,6 @@ import android.os.Bundle;
 import android.support.v7.widget.AppCompatEditText;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnSdkListener {
+    private final String TAG = getClass().getSimpleName();
     private volatile WeakReference<Handler> mWeakHandler;
     private ProgressDialog mProgressDialog;
     private AlertDialog.Builder mAlertBuilder;
@@ -43,7 +42,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     
     private TextView txt_result;
     private AppCompatEditText edit_host;
-    private InputMethodManager imm;
     
     private String appKey = UCloud为您的APP分配的APP_KEY;
     private String appSecret = UCloud为您的APP分配的APP_SECRET;
@@ -61,7 +59,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ips.add("106.75.79.228");   // www.ucloud.cn
         ips.add("115.239.210.27");  // www.baidu.com
         mUCNetAnalysisManager.setCustomIps(ips);
-        imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         
         txt_result = findViewById(R.id.txt_result);
         edit_host = findViewById(R.id.edit_host);
@@ -92,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     sb.append(ip + "\n");
         
         edit_host.setText(sb.toString().trim());
-    
+        
         mUCNetAnalysisManager.register(this);
     }
     
@@ -178,11 +175,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     
     @Override
     public void onRegister(UCSdkStatus status) {
+        JLog.D(TAG, "onRegister--->" + status.name());
         Toast.makeText(this, status.name(), Toast.LENGTH_SHORT).show();
     }
     
     @Override
     public void onNetworkStatusChanged(UCNetworkInfo networkInfo) {
+        JLog.D(TAG, "onNetworkStatusChanged--->" + networkInfo.toString());
         Toast.makeText(this, networkInfo.toString(), Toast.LENGTH_SHORT).show();
     }
 }
