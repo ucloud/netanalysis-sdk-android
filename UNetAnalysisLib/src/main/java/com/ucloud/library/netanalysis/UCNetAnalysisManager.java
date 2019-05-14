@@ -543,7 +543,7 @@ public class UCNetAnalysisManager {
             
             @Override
             public void onFailure(Call<UCApiResponseBean<IpListBean>> call, Throwable t) {
-            
+                JLog.I(TAG, "apiGetPingList failed:", t);
             }
         });
     }
