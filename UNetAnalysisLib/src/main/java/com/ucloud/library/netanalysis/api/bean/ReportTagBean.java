@@ -22,14 +22,11 @@ public class ReportTagBean {
     protected final String sdkVersion = UCNetAnalysisManager.SDK_VERSION;
     @SerializedName("cus")
     protected int cus = 0;
-    @SerializedName("optional_data")
-    protected String optionalData;
     @SerializedName("tz")
     protected String timezone;
     
-    protected ReportTagBean(String appId, String optionalData) {
+    protected ReportTagBean(String appId) {
         this.appId = appId;
-        this.optionalData = optionalData;
         try {
             this.timezone = TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.getDefault());
             this.timezone = this.timezone.replace("GMT", "").replace(":", "");
@@ -69,8 +66,6 @@ public class ReportTagBean {
         sb.append(String.format(",s_ver=%s", sdkVersion));
         sb.append(String.format(",cus=%d", cus));
         sb.append(String.format(",tz=%s", (timezone == null ? "" : timezone)));
-        if (!TextUtils.isEmpty(optionalData))
-            sb.append(String.format(",%s", optionalData));
         return sb.toString();
     }
     

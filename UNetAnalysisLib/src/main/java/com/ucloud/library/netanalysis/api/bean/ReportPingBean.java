@@ -2,6 +2,7 @@ package com.ucloud.library.netanalysis.api.bean;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 
 /**
  * Created by joshua on 2018/10/17 16:26.
@@ -12,8 +13,8 @@ public class ReportPingBean extends UCReportBean {
     @SerializedName("ping_data")
     private ReportPingData pingData;
     
-    public ReportPingBean(String appKey, PingDataBean pingData, ReportPingTagBean tag, IpInfoBean ipInfo) {
-        super(appKey, "ping", tag, ipInfo);
+    public ReportPingBean(String appKey, PingDataBean pingData, ReportPingTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
+        super(appKey, "ping", tag, ipInfo, userDefinedData);
         if (pingData != null) {
             this.timestamp = pingData.timestamp;
             this.pingData = new ReportPingData(pingData.getDelay(), pingData.getLoss());

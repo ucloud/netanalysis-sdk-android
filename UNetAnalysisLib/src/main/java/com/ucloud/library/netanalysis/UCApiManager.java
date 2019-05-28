@@ -20,9 +20,10 @@ import com.ucloud.library.netanalysis.api.bean.UCReportBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportEncryptBean;
 import com.ucloud.library.netanalysis.api.interceptor.UCInterceptor;
 import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
-import com.ucloud.library.netanalysis.module.OptionalParam;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.HexFormatter;
+import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -66,14 +67,14 @@ final class UCApiManager {
         this.context = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
-    
+        
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
                 .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
                 .addInterceptor(new UCInterceptor())
                 .build();
-    
+        
         Retrofit retrofit = new Retrofit.Builder()
                 .client(okHttpClient)
                 .baseUrl(BuildConfig.UCLOUD_API_IP_LIST)
@@ -112,20 +113,20 @@ final class UCApiManager {
     /**
      * 上报Ping的结果
      *
-     * @param reportAddress 上报接口地址
-     * @param pingData      ping结果数据 {@link PingDataBean}
-     * @param srcIpInfo     本地IP信息 {@link IpInfoBean}
-     * @param optionalParam 用户自定义信息{@link OptionalParam}
+     * @param reportAddress   上报接口地址
+     * @param pingData        ping结果数据 {@link PingDataBean}
+     * @param srcIpInfo       本地IP信息 {@link IpInfoBean}
+     * @param userDefinedData 用户自定义信息{@link UserDefinedData}
      * @return response返回     {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
     Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, boolean isCustomIp,
-                                                           IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
-        ReportPingTagBean reportTag = new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL(), (optionalParam == null ? null : optionalParam.toString()));
+                                                           IpInfoBean srcIpInfo, UserDefinedData userDefinedData) throws IOException {
+        ReportPingTagBean reportTag = new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL());
         reportTag.setCus(isCustomIp);
         ReportPingBean report = new ReportPingBean(appKey, pingData,
                 reportTag
-                , srcIpInfo);
+                , srcIpInfo, userDefinedData);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
@@ -138,20 +139,20 @@ final class UCApiManager {
     /**
      * 上报Traceroute的结果
      *
-     * @param reportAddress  上报接口地址
-     * @param tracerouteData traceroute结果数据 {@link TracerouteDataBean}
-     * @param srcIpInfo      本地IP信息 {@link IpInfoBean}
-     * @param optionalParam  用户自定义信息{@link OptionalParam}
+     * @param reportAddress   上报接口地址
+     * @param tracerouteData  traceroute结果数据 {@link TracerouteDataBean}
+     * @param srcIpInfo       本地IP信息 {@link IpInfoBean}
+     * @param userDefinedData 用户自定义信息{@link UserDefinedData}
      * @return response返回  {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
     Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, boolean isCustomIp,
-                                                                 IpInfoBean srcIpInfo, OptionalParam optionalParam) throws IOException {
-        ReportTracerouteTagBean reportTag = new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip(), (optionalParam == null ? null : optionalParam.toString()));
+                                                                 IpInfoBean srcIpInfo, UserDefinedData userDefinedData) throws IOException {
+        ReportTracerouteTagBean reportTag = new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip());
         reportTag.setCus(isCustomIp);
         ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
                 reportTag
-                , srcIpInfo);
+                , srcIpInfo, userDefinedData);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
@@ -169,6 +170,8 @@ final class UCApiManager {
         
         String oriTag = reportBean.getTag();
         String oriIpInfo = reportBean.getIpInfo();
+        UserDefinedData oriUserDefined = reportBean.getUserDefinedData();
+        String oriStrUserDefined = oriUserDefined == null ? "" : oriUserDefined.toString();
         
         if (TextUtils.isEmpty(oriTag) || TextUtils.isEmpty(oriIpInfo))
             return null;
@@ -176,8 +179,9 @@ final class UCApiManager {
         UCReportEncryptBean encryptBean = new UCReportEncryptBean("");
         
         try {
-            reportBean.setTag(encryptRSA(reportBean.getTag(), appSecret));
-            reportBean.setIpInfo(encryptRSA(reportBean.getIpInfo(), appSecret));
+            reportBean.setTag(encryptRSA(oriTag, appSecret));
+            reportBean.setIpInfo(encryptRSA(oriIpInfo, appSecret));
+            reportBean.setUserDefinedStr(TextUtils.isEmpty(oriStrUserDefined) ? "" : encryptRSA(oriStrUserDefined, appSecret));
             
             encryptBean.setData(Base64.encodeToString(reportBean.toString().getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
             return encryptBean;

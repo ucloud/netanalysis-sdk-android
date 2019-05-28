@@ -17,7 +17,7 @@ import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
 import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
-import com.ucloud.library.netanalysis.module.OptionalParam;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_net_status).setOnClickListener(this);
         
         List<String> list = mUCNetAnalysisManager.getCustomIps();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (list != null && !list.isEmpty())
             for (String ip : list)
                 if (!TextUtils.isEmpty(ip))
@@ -91,13 +91,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         
         edit_host.setText(sb.toString().trim());
         
-        OptionalParam param = null;
+        UserDefinedData.Builder builder = new UserDefinedData.Builder();
+        sb = new StringBuilder();
+        for (int i = 0, len = 26; i < len; i++) {
+            int a = i % 26;
+            sb.append(String.format("%s%s", a == 0 && i != 0 ? " " : "", (char) (97 + a)));
+        }
+        builder.addParam(new UserDefinedData.UserDefinedParam("user_id", sb.toString()));
         try {
-            param = new OptionalParam("This is RC version demo test");
+            UserDefinedData param = builder.create();
+            mUCNetAnalysisManager.register(this, param);
         } catch (UCParamVerifyException e) {
             e.printStackTrace();
         }
-        mUCNetAnalysisManager.register(this, param);
     }
     
     private synchronized Handler getHandler() {
