@@ -120,13 +120,12 @@ final class UCApiManager {
      * @return response返回     {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, boolean isCustomIp,
+    Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean pingData, int pingStatus, boolean isCustomIp,
                                                            IpInfoBean srcIpInfo, UserDefinedData userDefinedData) throws IOException {
         ReportPingTagBean reportTag = new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL());
         reportTag.setCus(isCustomIp);
-        ReportPingBean report = new ReportPingBean(appKey, pingData,
-                reportTag
-                , srcIpInfo, userDefinedData);
+        ReportPingBean report = new ReportPingBean(appKey, pingData, pingStatus,
+                reportTag, srcIpInfo, userDefinedData);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)

@@ -44,8 +44,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView txt_result;
     private AppCompatEditText edit_host;
     
-    private String appKey = UCloud为您的APP分配的APP_KEY;
-    private String appSecret = UCloud为您的APP分配的APP_SECRET;
+    private String appKey = "b9e914cc-be4c-5d76-8b15-6953bb669974";
+    private String appSecret = "-----BEGIN RSA PUBLIC KEY-----\n" +
+            "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDLKoEDmxCXT3PL+QaCcGb1UeC3\n" +
+            "M77IRXbbcSOiwRjRt/qqTU46DTK9RCpwdbBf14w/9TBP3/XSGpPcvIrwUwWHGmoa\n" +
+            "wf9Wkhlgm8aEKaVnw4LOAdKlANHLdgoOu4iirc1BbfrLila+InVgW1rJRyT+eW+d\n" +
+            "kCJrZcWUYD8OMgTYNQIDAQAB\n" +
+            "-----END RSA PUBLIC KEY-----";
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {

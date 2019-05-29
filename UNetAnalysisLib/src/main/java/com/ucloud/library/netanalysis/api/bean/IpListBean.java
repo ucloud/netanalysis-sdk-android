@@ -15,6 +15,8 @@ public class IpListBean {
     private List<InfoBean> info;
     @SerializedName("url")
     private List<String> url;
+    @SerializedName("domain")
+    private String domain = "www.baidu.com";
     
     public static class InfoBean {
         @SerializedName("location")
@@ -58,6 +60,14 @@ public class IpListBean {
     
     public void setUrl(List<String> url) {
         this.url = url;
+    }
+    
+    public String getDomain() {
+        return domain;
+    }
+    
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
     
     @Override
