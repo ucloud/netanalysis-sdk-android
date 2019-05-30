@@ -22,6 +22,7 @@ import com.ucloud.library.netanalysis.api.bean.IpInfoBean;
 import com.ucloud.library.netanalysis.api.bean.IpListBean;
 import com.ucloud.library.netanalysis.api.bean.MessageBean;
 import com.ucloud.library.netanalysis.api.bean.PingDataBean;
+import com.ucloud.library.netanalysis.api.bean.PingDomainResult;
 import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
 import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
@@ -91,7 +92,7 @@ public class UCNetAnalysisManager {
     private UserDefinedData userDefinedData;
     
     private String mDomain;
-    private Integer mDomainLoss;
+    private PingDomainResult mDomainResult;
     
     private UCNetAnalysisManager(Context context, String appKey, String appSecret) {
         this.mContext = context;
@@ -452,7 +453,7 @@ public class UCNetAnalysisManager {
                 flag = true;
             }
             
-            mDomainLoss = null;
+            mDomainResult = null;
             mDomain = null;
             
             if (mCmdThreadPool != null)
@@ -557,7 +558,7 @@ public class UCNetAnalysisManager {
     }
     
     private void checkDomain() {
-        mDomainLoss = null;
+        mDomainResult = null;
         if (TextUtils.isEmpty(mDomain) || mReportAddr == null || mReportAddr.isEmpty())
             return;
         
@@ -605,10 +606,8 @@ public class UCNetAnalysisManager {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
             JLog.D(TAG, result == null ? "result = null" : result.toString());
-            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
-                return;
             
-            mDomainLoss = result.lossRate();
+            mDomainResult = new PingDomainResult(result, status);
         }
     };
     
@@ -655,7 +654,19 @@ public class UCNetAnalysisManager {
         report.setLoss(result.lossRate());
         report.setTTL(result.accessTTL());
         report.setDst_ip(result.getTargetIp());
-        int pingStatus = result.lossRate() == 100 && mDomainLoss.intValue() == 100 ? 1 : 0;
+        int pingStatus = 2;
+        
+        if (result.lossRate() < 100) {
+            pingStatus = 0;
+        } else {
+            if (mDomainResult == null
+                    || mDomainResult.getPingResult() == null
+                    || !mDomainResult.getStatus().equals(UCommandStatus.CMD_STATUS_SUCCESSFUL)) {
+                pingStatus = 2;
+            } else {
+                pingStatus = mDomainResult.getPingResult().lossRate() < 100 ? 0 : 1;
+            }
+        }
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
