@@ -22,6 +22,7 @@ import com.ucloud.library.netanalysis.api.bean.IpInfoBean;
 import com.ucloud.library.netanalysis.api.bean.IpListBean;
 import com.ucloud.library.netanalysis.api.bean.MessageBean;
 import com.ucloud.library.netanalysis.api.bean.PingDataBean;
+import com.ucloud.library.netanalysis.api.bean.PingDomainResult;
 import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
 import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
@@ -36,6 +37,7 @@ import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteCallback;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteNodeResult;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteResult;
 import com.ucloud.library.netanalysis.module.IpReport;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetStatus;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
@@ -67,14 +69,11 @@ public class UCNetAnalysisManager {
     public static final String SDK_VERSION = String.format("Android/%s", BuildConfig.VERSION_NAME);
     public static final int CUSTOM_IP_LIST_SIZE = 5;
     
-    private final int MAX_AUTO_COMMAND_TASK_SIZE = 2;
-    private final int MAX_CUSTOM_COMMAND_TASK_SIZE = 3;
     private static volatile UCNetAnalysisManager mInstance = null;
     private UCApiManager mApiManager;
     private Context mContext;
     
-    private ExecutorService mAutoThreadPool;
-    private ExecutorService mCustomThreadPool;
+    private ExecutorService mCmdThreadPool;
     private UNetStatusReceiver mNetStatusReceiver;
     private boolean isStartMonitorNetStatus = false;
     private TelephonyManager mTelephonyManager;
@@ -90,6 +89,10 @@ public class UCNetAnalysisManager {
     
     private String appSecret;
     private String appKey;
+    private UserDefinedData userDefinedData;
+    
+    private String mDomain;
+    private PingDomainResult mDomainResult;
     
     private UCNetAnalysisManager(Context context, String appKey, String appSecret) {
         this.mContext = context;
@@ -132,11 +135,8 @@ public class UCNetAnalysisManager {
     }
     
     private void destroyObj() {
-        if (mAutoThreadPool != null && !mAutoThreadPool.isShutdown())
-            mAutoThreadPool.shutdownNow();
-        
-        if (mCustomThreadPool != null && !mCustomThreadPool.isShutdown())
-            mCustomThreadPool.shutdownNow();
+        if (mCmdThreadPool != null && !mCmdThreadPool.isShutdown())
+            mCmdThreadPool.shutdownNow();
         
         clearIpList();
         stopMonitorNetStatus();
@@ -148,6 +148,10 @@ public class UCNetAnalysisManager {
     }
     
     public void register(OnSdkListener listener) {
+        register(listener, null);
+    }
+    
+    public void register(OnSdkListener listener, UserDefinedData userDefinedData) {
         setSdkListener(listener);
         
         if (TextUtils.isEmpty(appKey) || TextUtils.isEmpty(appSecret)) {
@@ -157,6 +161,8 @@ public class UCNetAnalysisManager {
             return;
         }
         
+        this.userDefinedData = userDefinedData;
+        
         startMonitorNetStatus();
         if (mSdkListener != null)
             mSdkListener.onRegister(UCSdkStatus.REGISTER_SUCCESS);
@@ -164,9 +170,6 @@ public class UCNetAnalysisManager {
     
     public void setCustomIps(List<String> ips) {
         mCustomLock.lock();
-        if (mCustomThreadPool != null)
-            mCustomThreadPool.shutdownNow();
-        mCustomThreadPool = Executors.newFixedThreadPool(MAX_CUSTOM_COMMAND_TASK_SIZE);
         mCustomIps.clear();
         if (ips != null && !ips.isEmpty()) {
             if (ips.size() > CUSTOM_IP_LIST_SIZE) {
@@ -205,15 +208,12 @@ public class UCNetAnalysisManager {
         isCustomAnalysing = true;
         mCustomAnalyseListener = listener;
         // 如果手动检测触发，则强制关闭自动检测
-        if (mAutoThreadPool != null)
-            mAutoThreadPool.shutdownNow();
-        
-        if (mCustomThreadPool != null)
-            mCustomThreadPool.shutdownNow();
+        if (mCmdThreadPool != null)
+            mCmdThreadPool.shutdownNow();
         
         System.gc();
-        mCustomThreadPool = Executors.newFixedThreadPool(MAX_CUSTOM_COMMAND_TASK_SIZE);
-        mCustomThreadPool.execute(new CustomAnalyseRunner(mCustomAnalyseListener));
+        mCmdThreadPool = Executors.newSingleThreadExecutor();
+        mCmdThreadPool.execute(new CustomAnalyseRunner(mCustomAnalyseListener));
     }
     
     private class CustomAnalyseRunner implements Runnable {
@@ -273,12 +273,15 @@ public class UCNetAnalysisManager {
                 }
             };
             
+            
+            checkDomain();
+            
             for (String ip : customIps)
-                pingCustom(new Ping(new Ping.Config(ip, 5), pingCallback));
+                ping(new Ping(new Ping.Config(ip, 5), pingCallback));
             
             if (mReportAddr != null && !mReportAddr.isEmpty())
                 for (String ip : customIps)
-                    tracerouteCustom(new Traceroute(new Traceroute.Config(ip).setThreadSize(5),
+                    traceroute(new Traceroute(new Traceroute.Config(ip).setThreadSize(3),
                             mReportCustomTracerouteCallback));
             
         }
@@ -398,22 +401,14 @@ public class UCNetAnalysisManager {
         if (ping == null)
             throw new NullPointerException("The parameter (ping) is null !");
         
-        if (mAutoThreadPool != null && !mAutoThreadPool.isShutdown())
-            mAutoThreadPool.execute(ping);
-    }
-    
-    private void pingCustom(Ping ping) {
-        if (ping == null)
-            throw new NullPointerException("The parameter (ping) is null !");
-        
-        if (mCustomThreadPool != null && !mCustomThreadPool.isShutdown())
-            mCustomThreadPool.execute(ping);
+        if (mCmdThreadPool != null && !mCmdThreadPool.isShutdown())
+            mCmdThreadPool.execute(ping);
     }
     
     private void traceroute(String host, TracerouteCallback callback) {
         if (TextUtils.isEmpty(host))
             throw new NullPointerException("The parameter (host) is null !");
-        Traceroute traceroute = new Traceroute(new Traceroute.Config(host).setThreadSize(5),
+        Traceroute traceroute = new Traceroute(new Traceroute.Config(host).setThreadSize(3),
                 callback);
         traceroute(traceroute);
     }
@@ -422,16 +417,8 @@ public class UCNetAnalysisManager {
         if (traceroute == null)
             throw new NullPointerException("The parameter (traceroute) is null !");
         
-        if (mAutoThreadPool != null && !mAutoThreadPool.isShutdown())
-            mAutoThreadPool.execute(traceroute);
-    }
-    
-    private void tracerouteCustom(Traceroute traceroute) {
-        if (traceroute == null)
-            throw new NullPointerException("The parameter (traceroute) is null !");
-        
-        if (mCustomThreadPool != null && !mCustomThreadPool.isShutdown())
-            mCustomThreadPool.execute(traceroute);
+        if (mCmdThreadPool != null && !mCmdThreadPool.isShutdown())
+            mCmdThreadPool.execute(traceroute);
     }
     
     private Boolean flag = false;
@@ -458,6 +445,7 @@ public class UCNetAnalysisManager {
             
             if (info == null || info.getNetStatus() == UCNetStatus.NET_STATUS_NOT_REACHABLE)
                 return;
+            
             synchronized (flag) {
                 if (flag)
                     return;
@@ -465,9 +453,12 @@ public class UCNetAnalysisManager {
                 flag = true;
             }
             
-            if (mAutoThreadPool != null)
-                mAutoThreadPool.shutdownNow();
-            mAutoThreadPool = Executors.newSingleThreadExecutor();
+            mDomainResult = null;
+            mDomain = null;
+            
+            if (mCmdThreadPool != null)
+                mCmdThreadPool.shutdownNow();
+            mCmdThreadPool = Executors.newSingleThreadExecutor();
             
             clearIpList();
             System.gc();
@@ -479,8 +470,10 @@ public class UCNetAnalysisManager {
         mApiManager.apiGetPublicIpInfo(new Callback<PublicIpBean>() {
             @Override
             public void onResponse(Call<PublicIpBean> call, Response<PublicIpBean> response) {
-                if (response == null || response.body() == null)
+                if (response == null || response.body() == null) {
+                    JLog.I(TAG, "apiGetPublicIpInfo: response is null");
                     return;
+                }
                 
                 mCurSrcIpInfo = response.body().getIpInfo();
                 mCurSrcIpInfo.setNetType(checkNetworkStatus().getNetStatus().getValue());
@@ -492,6 +485,7 @@ public class UCNetAnalysisManager {
             
             @Override
             public void onFailure(Call<PublicIpBean> call, Throwable t) {
+                JLog.I(TAG, "apiGetPublicIpInfo failed:", t);
                 synchronized (flag) {
                     flag = false;
                 }
@@ -503,12 +497,16 @@ public class UCNetAnalysisManager {
         mApiManager.apiGetPingList(mCurSrcIpInfo, new Callback<UCApiResponseBean<IpListBean>>() {
             @Override
             public void onResponse(Call<UCApiResponseBean<IpListBean>> call, Response<UCApiResponseBean<IpListBean>> response) {
-                if (response == null || response.body() == null)
+                if (response == null || response.body() == null) {
+                    JLog.I(TAG, "apiGetPingList: response is null");
                     return;
+                }
                 
                 UCApiResponseBean<IpListBean> body = response.body();
-                if (body == null)
+                if (body == null) {
+                    JLog.I(TAG, "apiGetPingList: body is null");
                     return;
+                }
                 
                 if (body.getMeta() == null) {
                     if (body.getMeta().getCode() != 200)
@@ -527,16 +525,19 @@ public class UCNetAnalysisManager {
                 if (randomIpList(body.getData())) {
                     mIpListCache = body.getData();
                     mReportAddr = mIpListCache.getUrl();
+                    mDomain = mIpListCache.getDomain();
                 }
                 mCacheLock.unlock();
                 
-                enqueueCustom();
+                checkDomain();
                 enqueueAuto();
+                enqueueCustom();
             }
             
             @Override
             public void onFailure(Call<UCApiResponseBean<IpListBean>> call, Throwable t) {
-            
+                JLog.I(TAG, "apiGetPingList failed:", t);
+                
             }
         });
     }
@@ -556,6 +557,14 @@ public class UCNetAnalysisManager {
         return true;
     }
     
+    private void checkDomain() {
+        mDomainResult = null;
+        if (TextUtils.isEmpty(mDomain) || mReportAddr == null || mReportAddr.isEmpty())
+            return;
+        
+        ping(mDomain, mDomainPingCallback);
+    }
+    
     private void enqueueAuto() {
         mCacheLock.lock();
         if (mIpListCache == null || mReportAddr == null || mReportAddr.isEmpty()) {
@@ -570,8 +579,6 @@ public class UCNetAnalysisManager {
         
         for (IpListBean.InfoBean info : list) {
             ping(new Ping(new Ping.Config(info.getIp(), 5), mReportPingCallback));
-            traceroute(new Traceroute(new Traceroute.Config(info.getIp()).setThreadSize(5),
-                    mReportTracerouteCallback));
         }
     }
     
@@ -590,38 +597,19 @@ public class UCNetAnalysisManager {
         
         for (String ip : list) {
             ping(new Ping(new Ping.Config(ip, 5), mReportCustomPingCallback));
-            traceroute(new Traceroute(new Traceroute.Config(ip).setThreadSize(5),
+            traceroute(new Traceroute(new Traceroute.Config(ip).setThreadSize(3),
                     mReportCustomTracerouteCallback));
         }
     }
     
-    private void enqueuePing() {
-        mCacheLock.lock();
-        if (mIpListCache == null || mReportAddr == null || mReportAddr.isEmpty()) {
-            mCacheLock.unlock();
-            return;
+    private PingCallback mDomainPingCallback = new PingCallback() {
+        @Override
+        public void onPingFinish(PingResult result, UCommandStatus status) {
+            JLog.D(TAG, result == null ? "result = null" : result.toString());
+            
+            mDomainResult = new PingDomainResult(result, status);
         }
-        
-        List<IpListBean.InfoBean> list = mIpListCache.getInfo();
-        mCacheLock.unlock();
-        if (list == null)
-            return;
-        for (IpListBean.InfoBean info : list)
-            ping(new Ping(new Ping.Config(info.getIp(), 5), mReportPingCallback));
-    }
-    
-    private void enqueuePingCustom() {
-        mCustomLock.lock();
-        if (mCustomIps == null || mCustomIps.isEmpty() || mReportAddr == null || mReportAddr.isEmpty()) {
-            mCustomLock.unlock();
-            return;
-        }
-        
-        for (String ip : mCustomIps)
-            ping(new Ping(new Ping.Config(ip, 5), mReportCustomPingCallback));
-        
-        mCustomLock.unlock();
-    }
+    };
     
     private PingCallback mReportPingCallback = new PingCallback() {
         @Override
@@ -666,10 +654,24 @@ public class UCNetAnalysisManager {
         report.setLoss(result.lossRate());
         report.setTTL(result.accessTTL());
         report.setDst_ip(result.getTargetIp());
+        int pingStatus = 2;
+        
+        if (result.lossRate() < 100) {
+            pingStatus = 0;
+        } else {
+            if (mDomainResult == null
+                    || mDomainResult.getPingResult() == null
+                    || !mDomainResult.getStatus().equals(UCommandStatus.CMD_STATUS_SUCCESSFUL)) {
+                pingStatus = 2;
+            } else {
+                pingStatus = mDomainResult.getPingResult().lossRate() < 100 ? 0 : 1;
+            }
+        }
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(i), report, isCustomIp, mCurSrcIpInfo);
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(i), report,
+                        pingStatus, isCustomIp, mCurSrcIpInfo, userDefinedData);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
@@ -680,37 +682,6 @@ public class UCNetAnalysisManager {
                 e.printStackTrace();
             }
         }
-    }
-    
-    private void enqueueTraceroute() {
-        mCacheLock.lock();
-        if (mIpListCache == null || mReportAddr == null || mReportAddr.isEmpty()) {
-            mCacheLock.unlock();
-            return;
-        }
-        
-        List<IpListBean.InfoBean> list = mIpListCache.getInfo();
-        mCacheLock.unlock();
-        if (list == null)
-            return;
-        for (IpListBean.InfoBean info : list)
-            traceroute(new Traceroute(new Traceroute.Config(info.getIp()).setThreadSize(5),
-                    mReportTracerouteCallback));
-    }
-    
-    private void enqueueTracerouteCustom() {
-        mCustomLock.lock();
-        if (mCustomIps == null || mCustomIps.isEmpty()
-                || mReportAddr == null || mReportAddr.isEmpty()) {
-            mCustomLock.unlock();
-            return;
-        }
-        
-        for (String ip : mCustomIps)
-            traceroute(new Traceroute(new Traceroute.Config(ip).setThreadSize(5),
-                    mReportCustomTracerouteCallback));
-        
-        mCustomLock.unlock();
     }
     
     private TracerouteCallback mReportTracerouteCallback = new TracerouteCallback() {
@@ -743,7 +714,8 @@ public class UCNetAnalysisManager {
         reportTraceroute(result, false, reportAddr);
     }
     
-    private void reportTraceroute(TracerouteResult result, boolean isCustomIp, List<String> reportAddr) {
+    private void reportTraceroute(TracerouteResult result, boolean isCustomIp, List<
+            String> reportAddr) {
         if (result == null || reportAddr == null || reportAddr.isEmpty())
             return;
         
@@ -765,7 +737,8 @@ public class UCNetAnalysisManager {
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
             try {
-                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(i), report, isCustomIp, mCurSrcIpInfo);
+                Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(i), report,
+                        isCustomIp, mCurSrcIpInfo, userDefinedData);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)

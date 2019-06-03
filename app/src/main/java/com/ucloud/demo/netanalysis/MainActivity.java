@@ -1,7 +1,6 @@
 package com.ucloud.demo.netanalysis;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Looper;
@@ -11,13 +10,14 @@ import android.os.Bundle;
 import android.support.v7.widget.AppCompatEditText;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
+import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     
     private TextView txt_result;
     private AppCompatEditText edit_host;
-    private InputMethodManager imm;
     
     private String appKey = UCloud为您的APP分配的APP_KEY;
     private String appSecret = UCloud为您的APP分配的APP_SECRET;
@@ -61,7 +60,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ips.add("106.75.79.228");   // www.ucloud.cn
         ips.add("115.239.210.27");  // www.baidu.com
         mUCNetAnalysisManager.setCustomIps(ips);
-        imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         
         txt_result = findViewById(R.id.txt_result);
         edit_host = findViewById(R.id.edit_host);
@@ -85,15 +83,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_net_status).setOnClickListener(this);
         
         List<String> list = mUCNetAnalysisManager.getCustomIps();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (list != null && !list.isEmpty())
             for (String ip : list)
                 if (!TextUtils.isEmpty(ip))
                     sb.append(ip + "\n");
         
         edit_host.setText(sb.toString().trim());
-    
-        mUCNetAnalysisManager.register(this);
+        
+        UserDefinedData.Builder builder = new UserDefinedData.Builder();
+        sb = new StringBuilder();
+        for (int i = 0, len = 26; i < len; i++) {
+            int a = i % 26;
+            sb.append(String.format("%s%s", a == 0 && i != 0 ? " " : "", (char) (97 + a)));
+        }
+        builder.addParam(new UserDefinedData.UserDefinedParam("user_id", sb.toString()));
+        try {
+            UserDefinedData param = builder.create();
+            mUCNetAnalysisManager.register(this, param);
+        } catch (UCParamVerifyException e) {
+            e.printStackTrace();
+        }
     }
     
     private synchronized Handler getHandler() {
