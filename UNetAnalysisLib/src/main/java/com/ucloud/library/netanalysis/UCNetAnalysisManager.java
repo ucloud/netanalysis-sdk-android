@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
@@ -182,6 +183,7 @@ public class UCNetAnalysisManager {
         mCustomLock.unlock();
         System.gc();
         
+        checkDomain();
         enqueueCustom();
     }
     
@@ -557,11 +559,28 @@ public class UCNetAnalysisManager {
         return true;
     }
     
+    private boolean isCheckingDomain = false;
+    private ReentrantLock mLockChecking = new ReentrantLock();
+    
+    private boolean isCheckingDomain(int flag) {
+        mLockChecking.lock();
+        isCheckingDomain = flag > 0 ? true : (flag < 0 ? false : isCheckingDomain);
+        boolean tmp = isCheckingDomain;
+        mLockChecking.unlock();
+        return tmp;
+    }
+    
     private void checkDomain() {
-        mDomainResult = null;
         if (TextUtils.isEmpty(mDomain) || mReportAddr == null || mReportAddr.isEmpty())
             return;
         
+        if (isCheckingDomain(0)) {
+            return;
+        }
+        
+        isCheckingDomain(1);
+        
+        mDomainResult = null;
         ping(mDomain, mDomainPingCallback);
     }
     
@@ -579,6 +598,8 @@ public class UCNetAnalysisManager {
         
         for (IpListBean.InfoBean info : list) {
             ping(new Ping(new Ping.Config(info.getIp(), 5), mReportPingCallback));
+            if (info.isNeedTraceroute())
+                traceroute(new Traceroute(new Traceroute.Config(info.getIp()).setThreadSize(3), mReportTracerouteCallback));
         }
     }
     
@@ -606,7 +627,7 @@ public class UCNetAnalysisManager {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
             JLog.D(TAG, result == null ? "result = null" : result.toString());
-            
+            isCheckingDomain(-1);
             mDomainResult = new PingDomainResult(result, status);
         }
     };

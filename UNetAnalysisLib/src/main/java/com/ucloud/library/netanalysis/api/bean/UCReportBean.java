@@ -20,6 +20,8 @@ public class UCReportBean extends UCApiBaseRequestBean {
     @SerializedName("user_defined")
     protected String userDefinedStr;
     protected transient UserDefinedData userDefinedData;
+    @SerializedName("uuid")
+    protected String uuid;
     
     public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
         super(appKey);
@@ -82,5 +84,13 @@ public class UCReportBean extends UCApiBaseRequestBean {
     
     public void setIpInfo(String ipInfo) {
         this.ipInfo = ipInfo;
+    }
+    
+    public String getUuid() {
+        return uuid;
+    }
+    
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

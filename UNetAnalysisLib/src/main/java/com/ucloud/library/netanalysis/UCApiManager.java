@@ -1,6 +1,7 @@
 package com.ucloud.library.netanalysis;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.Base64;
 
@@ -23,14 +24,17 @@ import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.HexFormatter;
+import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.crypto.BadPaddingException;
@@ -56,16 +60,22 @@ final class UCApiManager {
     public static final long DEFAULT_WRITE_TIMEOUT = 20 * 1000;
     public static final long DEFAULT_READ_TIMEOUT = 20 * 1000;
     
+    private final String KEY_SP_UUID = "uuid";
+    
     private Context context;
+    private WeakReference<SharedPreferences> weakSharedPreferences;
     private NetAnalysisApiService apiService;
     
     private String appKey;
     private String appSecret;
+    private String uuid;
     
     protected UCApiManager(Context context, String appKey, String appSecret) {
         this.context = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
+        
+        prepareUuid();
         
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
@@ -81,6 +91,23 @@ final class UCApiManager {
                 .build();
         
         apiService = retrofit.create(NetAnalysisApiService.class);
+    }
+    
+    private void prepareUuid() {
+        SharedPreferences sharedPreferences = getSharedPreferences();
+        uuid = sharedPreferences.getString(KEY_SP_UUID, null);
+        if (TextUtils.isEmpty(uuid)) {
+            uuid = UUID.randomUUID().toString().toUpperCase();
+            sharedPreferences.edit().putString(KEY_SP_UUID, uuid).apply();
+        }
+    }
+    
+    private SharedPreferences getSharedPreferences() {
+        if (weakSharedPreferences == null || weakSharedPreferences.get() == null) {
+            weakSharedPreferences = new WeakReference<>(context.getSharedPreferences("umqa-sdk", Context.MODE_PRIVATE));
+        }
+        
+        return weakSharedPreferences.get();
     }
     
     /**
@@ -127,6 +154,7 @@ final class UCApiManager {
         reportTag.setCus(isCustomIp);
         ReportPingBean report = new ReportPingBean(appKey, pingData, pingStatus,
                 reportTag, srcIpInfo, userDefinedData);
+        report.setUuid(uuid);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
@@ -154,6 +182,7 @@ final class UCApiManager {
         ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
                 reportTag
                 , srcIpInfo, userDefinedData);
+        report.setUuid(uuid);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
@@ -183,7 +212,6 @@ final class UCApiManager {
             reportBean.setTag(encryptRSA(oriTag, appSecret));
             reportBean.setIpInfo(encryptRSA(oriIpInfo, appSecret));
             reportBean.setUserDefinedStr(TextUtils.isEmpty(oriStrUserDefined) ? "" : encryptRSA(oriStrUserDefined, appSecret));
-            
             encryptBean.setData(Base64.encodeToString(reportBean.toString().getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
             return encryptBean;
         } catch (NoSuchPaddingException e) {

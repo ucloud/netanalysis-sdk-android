@@ -23,6 +23,12 @@ public class IpListBean {
         private String location;
         @SerializedName("ip")
         private String ip;
+        /**
+         * 0:不traceroute
+         * 1：需要traceroute
+         */
+        @SerializedName("type")
+        private int type;
         
         public String getLocation() {
             return location;
@@ -38,6 +44,18 @@ public class IpListBean {
         
         public void setIp(String ip) {
             this.ip = ip;
+        }
+        
+        public int getType() {
+            return type;
+        }
+        
+        public void setType(int type) {
+            this.type = type;
+        }
+        
+        public boolean isNeedTraceroute() {
+            return type == 1;
         }
         
         @Override
