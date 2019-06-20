@@ -98,12 +98,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             sb.append(String.format("%s%s", a == 0 && i != 0 ? " " : "", (char) (97 + a)));
         }
         builder.addParam(new UserDefinedData.UserDefinedParam("user_id", sb.toString()));
+        UserDefinedData param = null;
         try {
-            UserDefinedData param = builder.create();
-            mUCNetAnalysisManager.register(this, param);
+            param = builder.create();
         } catch (UCParamVerifyException e) {
             e.printStackTrace();
         }
+        /**
+         * register(listener, null) == register(listener)
+         */
+        mUCNetAnalysisManager.register(this, param);
     }
     
     private synchronized Handler getHandler() {
