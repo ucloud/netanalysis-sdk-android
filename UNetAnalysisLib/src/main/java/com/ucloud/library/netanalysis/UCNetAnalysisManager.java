@@ -183,7 +183,8 @@ public class UCNetAnalysisManager {
         mCustomLock.unlock();
         System.gc();
         
-        checkDomain();
+        if (mDomainResult == null)
+            checkDomain();
         enqueueCustom();
     }
     
