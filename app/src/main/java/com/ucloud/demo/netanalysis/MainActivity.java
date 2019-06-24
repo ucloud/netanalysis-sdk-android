@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int a = i % 26;
             sb.append(String.format("%s%s", a == 0 && i != 0 ? " " : "", (char) (97 + a)));
         }
-        builder.addParam(new UserDefinedData.UserDefinedParam("user_id", sb.toString()));
+        builder.putParam(new UserDefinedData.UserDefinedParam("user_id", sb.toString()));
         UserDefinedData param = null;
         try {
             param = builder.create();

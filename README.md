@@ -40,7 +40,6 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
 ```
 
 </br>
-
 ### Proguard
 
 > 如果您的项目最终需要混淆编译，那么请参考UNetAnalysisLib模块下的[proguard-rules.pro](https://github.com/ucloud/netanalysis-sdk-android/blob/master/UNetAnalysisLib/proguard-rules.pro)文件
@@ -75,17 +74,6 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
     }
     ```
 
-</br>
-
-### makeJar
-* 在`SDK项目根目录`/UNetAnalysisLib/build.gradle 中有`makeJar`和`makeProguardJar`两个task，分别是编译普通jar和混淆后的jar
-* 图解：
-
-    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155134.png)
-    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155422.png)
-    
-
-
 </br></br>
 
 ### 快速接入
@@ -109,18 +97,36 @@ OnSdkListener sdkListener = new OnSdkListener() {
     }
 };
 
-// 可选的用户自定义上报字段
-OptionalParam param = null;
+// (可选) - 用户自定义上报字段，字段为String-String的键值对Map
+UserDefinedData.Builder builder = new UserDefinedData.Builder();
+// or 
+// UserDefinedData.Builder builder = new UserDefinedData.Builder(Map<String, String>);
+builder.addParam(new UserDefinedData.UserDefinedParam("id", sb.toString()));
+UserDefinedData param = null;
+/**
+ * 所有的自定义字段将会以一下JSON字符串形式上报，转换成字符串后的最大长度为 1024 byte。
+ * 超长将会抛出异常
+ * [
+ *      {
+ *          "key": "",
+ *          "val": ""
+ *      },
+ *      ...
+ * ]
+ */
 try {
-    param = new OptionalParam("This is an optional parameter");
+    param = builder.create();
 } catch (UCParamVerifyException e) {
     e.printStackTrace();
 }
 
-// 注册sdk模块，注册成功后，若当前存在可用网络，将会自动开始检测网络质量
-manager.register(sdkListener);      // 不配置自定义上报字段的注册
-// 或者
+/**
+ * 注册sdk模块，注册成功之后，若当前有可用网络，即会自动开始检测网络质量
+ * 注意：
+ *   manager.register(listener, null) == manager.register(listener)
+ */
 manager.register(sdkListener, param); // 配置自定义上报字段的注册
+
 ```
 
 #### 2、配置你需要分析网络质量的IP地址或者域名
@@ -128,8 +134,9 @@ manager.register(sdkListener, param); // 配置自定义上报字段的注册
 List<String> ips = new ArrayList();
 ips.add("127.0.0.1");
 ips.add("127.0.0.2");
+
 /*
- * 配置你想要监测的网络质量的ip/域名
+ * 配置你想要监测的网络质量的ip，配置后即加入自动检测的队列，无需触发
  * 注意：不支持填写域名，请填写IP地址
  */
 manager.setCustomIps(ips);
@@ -184,12 +191,12 @@ public void register(OnSdkListener listener)
 
 #### 注册UCNetAnalysisManager模块(带有用户自定义上报字段)
 ``` java
-public void register(OnSdkListener listener, OptionalParam optionalParam)
+public void register(OnSdkListener listener, UserDefinedData userDefinedData)
 ```
 
 - **param**: 
     - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
-    - optionalParam: 用户自定义上报字段，详情见**OptionalParam**说明
+    - userDefinedData: 用户自定义上报字段，详情见**UserDefinedData**说明
 - **return**: -
 
 
@@ -202,25 +209,25 @@ public void setSdkListener(OnSdkListener listener)
     - listener:  OnSdkListener回调接口，详情见**OnSdkListener**说明
 - **return**: -
 
-#### 设置自定义的IP地址
+#### 设置自定义的IP地址或域名
 ``` java
 public void setCustomIps(List<String> ips)
 ```
 
-##### 注意：不支持填写域名，请填写IP地址
+##### 注意：不建议填写域名，而填写IP地址，若自定义列表中含有域名的，将默认取域名解析后的对应IP列表中的第一项。这样可能导致测试数据不准确！
 
 - **param**: 
-    - ips:  自定义需要网络分析的IP地址列表
+    - ips:  自定义需要网络分析的IP地址或域名列表
 - **return**: -
 
-#### 获取已设置的自定义的IP地址
+#### 获取已设置的自定义的IP地址或域名
 ``` java
 public List<String> getCustomIps()
 ```
 
 - **param**: -
 - **return**: 
-    - List<String>:  已设置的需要网络分析的IP地址列表
+    - List<String>:  已设置的需要网络分析的IP地址或域名列表
 
 #### 检查当前设备网络状态
 ``` java
@@ -248,27 +255,48 @@ public static void destroy()
 - **return**: -
 
 </br></br>
-### OptionalParam
+### UserDefinedData
 > 用户可选的自定义上报字段
 
 ``` java 
-public class OptionalParam {
-
-    public OptionalParam(String value) throws UCParamVerifyException {
-        // 构造方法
+public class UserDefinedData {
+        
+    public static class Builder {
+        // 无参构造
+        public Builder(){}
+        // 预设自定义字段的Map
+        public Builder(Map<String, String> map){}
+        // put字段进Map，若先put，再setData则会覆盖
+        public Builder putParam(UserDefinedParam param){}
+        // 设置预设自定义字段Map
+        public void setData(Map<String, String> map){}
+        // 创建UserDefinedData
+        public UserDefinedData create() throws UCParamVerifyException {}
+    }
+    
+    public static class UserDefinedParam {
+        public UserDefinedParam(String key, String value) {}
     }
 }
 ```
 
-#### 注意事项
-- OptionalParam是(String-String)键值对，其中：
-    -  Key为"opt_key"，且不可修改。
-    -  Value的最大字符长度是100 bytes。
-    -  Value不可包含 ' **,** '（**包括全角和半角**） 和 ' **=** ' ，这两个字符。
-- 如果有不满足规则的OptionalParam，new OptionalParam()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
+### 注意事项
+### UCloud尊重客户和终端用户的隐私，请务必不要上传带有用户隐私信息，包括但不限于：用户的姓名、手机号、身份证号、手机IMEI值、地址等敏感信息
+- UserDefinedData是(String-String)键值对Map，其中Key不能是null或者""。
+- 如果有不满足规则的UserDefinedData，UserDefinedData.Builder.create()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
 - 该字段作为用户在查询上报数据时，可作为查询索引，故**不建议用户在Value中拼接多个值**。
-
-### 该SDK尊重客户和终端用户的隐私，请务必不要上传带有用户隐私信息，包括但不限于：用户手机号、用户身份证号、用户手机IMEI值、用户地址等敏感信息
+- 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的最大长度为 1024 byte。
+  超长将会抛出异常
+  
+    ``` json
+    [
+        {
+            "key": "",
+            "val": ""
+        },
+        ...
+    ]
+    ```
 
 
 </br></br>
@@ -349,16 +377,11 @@ public enum UCNetStatus {
 
 ``` java
 public class JLog {
-    public static boolean SHOW_TEST = false;
     public static boolean SHOW_DEBUG = false;
     public static boolean SHOW_VERBOSE = true;
     public static boolean SHOW_INFO = true;
     public static boolean SHOW_WARN = true;
     public static boolean SHOW_ERROR = true;
-    
-    public static void T(String TAG, String info) {
-        // ...
-    }
     
     public static void D(String TAG, String info) {
         // ...

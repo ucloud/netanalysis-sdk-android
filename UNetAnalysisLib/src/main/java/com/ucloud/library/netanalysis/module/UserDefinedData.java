@@ -21,7 +21,6 @@ import java.util.Set;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UserDefinedData {
-    public static final String DEFAULT_OPT_PARAM_KEY_NAME = "user_defined";
     public static final int LIMIT_LEN_USER_DEFINED_DATA = 1 << 10;
     
     private static final String KEY_USER_DEFINED_PARAM = "key";
@@ -43,7 +42,7 @@ public class UserDefinedData {
         public Builder() {
         }
         
-        public Builder addParam(UserDefinedParam param) {
+        public Builder putParam(UserDefinedParam param) {
             if (map == null)
                 map = new ArrayMap<>();
             
