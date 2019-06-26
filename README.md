@@ -106,7 +106,7 @@ UserDefinedData.Builder builder = new UserDefinedData.Builder();
 builder.addParam(new UserDefinedData.UserDefinedParam("id", sb.toString()));
 UserDefinedData param = null;
 /**
- * 所有的自定义字段将会以一下JSON字符串形式上报，转换成字符串后的最大长度为 1024 Byte。
+ * 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的最大长度为 1024 Byte。
  * 超长将会抛出异常
  * [
  *      {
