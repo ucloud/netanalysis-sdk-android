@@ -10,6 +10,7 @@
 
 
 </br></br>
+
 ## 使用
 ### Dependencies
 NetAnalysis SDK依赖于Gson、Retrofit2.0
@@ -40,6 +41,7 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
 ```
 
 </br>
+
 ### Proguard
 
 > 如果您的项目最终需要混淆编译，那么请参考UNetAnalysisLib模块下的[proguard-rules.pro](https://github.com/ucloud/netanalysis-sdk-android/blob/master/UNetAnalysisLib/proguard-rules.pro)文件
@@ -104,7 +106,7 @@ UserDefinedData.Builder builder = new UserDefinedData.Builder();
 builder.addParam(new UserDefinedData.UserDefinedParam("id", sb.toString()));
 UserDefinedData param = null;
 /**
- * 所有的自定义字段将会以一下JSON字符串形式上报，转换成字符串后的最大长度为 1024 byte。
+ * 所有的自定义字段将会以一下JSON字符串形式上报，转换成字符串后的最大长度为 1024 Byte。
  * 超长将会抛出异常
  * [
  *      {
@@ -128,6 +130,7 @@ try {
 manager.register(sdkListener, param); // 配置自定义上报字段的注册
 
 ```
+
 
 #### 2、配置你需要分析网络质量的IP地址或者域名
 ``` java
@@ -285,7 +288,7 @@ public class UserDefinedData {
 - UserDefinedData是(String-String)键值对Map，其中Key不能是null或者""。
 - 如果有不满足规则的UserDefinedData，UserDefinedData.Builder.create()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
 - 该字段作为用户在查询上报数据时，可作为查询索引，故**不建议用户在Value中拼接多个值**。
-- 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的最大长度为 1024 byte。
+- 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的**最大长度为1024Byte**。
   超长将会抛出异常
   
     ``` json
