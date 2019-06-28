@@ -10,6 +10,7 @@
 
 
 </br></br>
+
 ## 使用
 ### Dependencies
 NetAnalysis SDK依赖于Gson、Retrofit2.0
@@ -26,9 +27,8 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
         implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
     }
     ```
-
+    
 - 也可以下载第三方库Jar包集合：[netanalysissdk-3rd-part-jars.zip](http://ucloud-jar.cn-sh2.ufileos.com/netanalysissdk-3rd-part-jars.zip)
-
 
 </br>
 
@@ -76,17 +76,6 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
     }
     ```
 
-</br>
-
-### makeJar
-* 在`SDK项目根目录`/UNetAnalysisLib/build.gradle 中有`makeJar`和`makeProguardJar`两个task，分别是编译普通jar和混淆后的jar
-* 图解：
-    
-    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155134.png)
-    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155422.png)
-    
-    
-    
 </br></br>
 
 ### 快速接入
@@ -110,21 +99,52 @@ OnSdkListener sdkListener = new OnSdkListener() {
     }
 };
 
-// 注册sdk模块，注册成功后，若当前存在可用网络，将会自动开始检测网络质量
-manager.register(sdkListener);
+// (可选) - 用户自定义上报字段，字段为String-String的键值对Map
+UserDefinedData.Builder builder = new UserDefinedData.Builder();
+// or 
+// UserDefinedData.Builder builder = new UserDefinedData.Builder(Map<String, String>);
+builder.addParam(new UserDefinedData.UserDefinedParam("id", sb.toString()));
+UserDefinedData param = null;
+/**
+ * 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的最大长度为 1024 Byte。
+ * 超长将会抛出异常
+ * [
+ *      {
+ *          "key": "",
+ *          "val": ""
+ *      },
+ *      ...
+ * ]
+ */
+try {
+    param = builder.create();
+} catch (UCParamVerifyException e) {
+    e.printStackTrace();
+}
+
+/**
+ * 注册sdk模块，注册成功之后，若当前有可用网络，即会自动开始检测网络质量
+ * 注意：
+ *   manager.register(listener, null) == manager.register(listener)
+ */
+manager.register(sdkListener, param); // 配置自定义上报字段的注册
+
 ```
+
 
 #### 2、配置你需要分析网络质量的IP地址或者域名
 ``` java
 List<String> ips = new ArrayList();
 ips.add("127.0.0.1");
 ips.add("127.0.0.2");
+
 /*
- * 配置你想要监测的网络质量的ip/域名
+ * 配置你想要监测的网络质量的ip，配置后即加入自动检测的队列，无需触发
  * 注意：不支持填写域名，请填写IP地址
  */
 manager.setCustomIps(ips);
 ```
+
 
 #### 3、在你的应用退出时，注销并销毁UCNetAnalysisManager
 ``` java
@@ -174,6 +194,17 @@ public void register(OnSdkListener listener)
     - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
 - **return**: -
 
+#### 注册UCNetAnalysisManager模块(带有用户自定义上报字段)
+``` java
+public void register(OnSdkListener listener, UserDefinedData userDefinedData)
+```
+
+- **param**: 
+    - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
+    - userDefinedData: 用户自定义上报字段，详情见**UserDefinedData**说明
+- **return**: -
+
+
 #### 设置Sdk回调接口
 ``` java
 public void setSdkListener(OnSdkListener listener)
@@ -201,7 +232,7 @@ public List<String> getCustomIps()
 
 - **param**: -
 - **return**: 
-    - List<String>:  已设置的需要网络分析的IP地址列表
+    - List<String>:  已设置的需要网络分析的IP地址或域名列表
 
 #### 检查当前设备网络状态
 ``` java
@@ -229,6 +260,51 @@ public static void destroy()
 - **return**: -
 
 </br></br>
+### UserDefinedData
+> 用户可选的自定义上报字段
+
+``` java 
+public class UserDefinedData {
+        
+    public static class Builder {
+        // 无参构造
+        public Builder(){}
+        // 预设自定义字段的Map
+        public Builder(Map<String, String> map){}
+        // put字段进Map，若先put，再setData则会覆盖
+        public Builder putParam(UserDefinedParam param){}
+        // 设置预设自定义字段Map
+        public void setData(Map<String, String> map){}
+        // 创建UserDefinedData
+        public UserDefinedData create() throws UCParamVerifyException {}
+    }
+    
+    public static class UserDefinedParam {
+        public UserDefinedParam(String key, String value) {}
+    }
+}
+```
+
+### 注意事项
+### UCloud尊重客户和终端用户的隐私，请务必不要上传带有用户隐私信息，包括但不限于：用户的姓名、手机号、身份证号、手机IMEI值、地址等敏感信息
+- UserDefinedData是(String-String)键值对Map，其中Key不能是null或者""。
+- 如果有不满足规则的UserDefinedData，UserDefinedData.Builder.create()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
+- 该字段作为用户在查询上报数据时，可作为查询索引，故**不建议用户在Value中拼接多个值**。
+- 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的**最大长度为1024Byte**。
+  超长将会抛出异常
+  
+    ``` json
+    [
+        {
+            "key": "",
+            "val": ""
+        },
+        ...
+    ]
+    ```
+
+
+</br></br>
 ### OnSdkListener
 > UCNetAnalysisManager模块回调接口
 
@@ -241,7 +317,6 @@ public interface OnSdkListener {
     void onNetworkStatusChanged(UCNetworkInfo status);
 }
 ```
-
 
 </br></br>
 ### UCNetworkInfo
@@ -307,16 +382,11 @@ public enum UCNetStatus {
 
 ``` java
 public class JLog {
-    public static boolean SHOW_TEST = false;
     public static boolean SHOW_DEBUG = false;
     public static boolean SHOW_VERBOSE = true;
     public static boolean SHOW_INFO = true;
     public static boolean SHOW_WARN = true;
     public static boolean SHOW_ERROR = true;
-    
-    public static void T(String TAG, String info) {
-        // ...
-    }
     
     public static void D(String TAG, String info) {
         // ...

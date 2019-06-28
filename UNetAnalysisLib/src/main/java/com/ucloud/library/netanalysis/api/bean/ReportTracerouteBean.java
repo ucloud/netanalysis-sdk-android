@@ -2,6 +2,7 @@ package com.ucloud.library.netanalysis.api.bean;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +16,8 @@ public class ReportTracerouteBean extends UCReportBean {
     @SerializedName("traceroute_data")
     private ReportTracerouteData tracerouteData;
     
-    public ReportTracerouteBean(String appKey, TracerouteDataBean tracerouteData, ReportTracerouteTagBean tag, IpInfoBean ipInfo) {
-        super(appKey, "traceroute", tag, ipInfo);
+    public ReportTracerouteBean(String appKey, TracerouteDataBean tracerouteData, ReportTracerouteTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
+        super(appKey, "traceroute", tag, ipInfo, userDefinedData);
         if (tracerouteData != null) {
             this.timestamp = tracerouteData.timestamp;
             this.tracerouteData = new ReportTracerouteData(tracerouteData.getRouteInfoList());

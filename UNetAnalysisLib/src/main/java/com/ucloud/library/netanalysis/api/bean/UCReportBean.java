@@ -1,6 +1,7 @@
 package com.ucloud.library.netanalysis.api.bean;
 
 import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 
 /**
  * Created by joshua on 2018/10/17 16:31.
@@ -16,12 +17,18 @@ public class UCReportBean extends UCApiBaseRequestBean {
     protected String tag;
     @SerializedName("ip_info")
     protected String ipInfo;
+    @SerializedName("user_defined")
+    protected String userDefinedStr;
+    protected transient UserDefinedData userDefinedData;
+    @SerializedName("uuid")
+    protected String uuid;
     
-    public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo) {
+    public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
         super(appKey);
         this.action = action;
         this.tag = tag.makeReportString();
         this.ipInfo = ipInfo.makeReportString();
+        this.userDefinedData = userDefinedData;
     }
     
     
@@ -63,7 +70,27 @@ public class UCReportBean extends UCApiBaseRequestBean {
             this.ipInfo = ipInfo.makeReportString();
     }
     
+    public UserDefinedData getUserDefinedData() {
+        return userDefinedData;
+    }
+    
+    public String getUserDefinedStr() {
+        return userDefinedStr;
+    }
+    
+    public void setUserDefinedStr(String userDefinedStr) {
+        this.userDefinedStr = userDefinedStr;
+    }
+    
     public void setIpInfo(String ipInfo) {
         this.ipInfo = ipInfo;
+    }
+    
+    public String getUuid() {
+        return uuid;
+    }
+    
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

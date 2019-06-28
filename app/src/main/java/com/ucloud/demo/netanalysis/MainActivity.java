@@ -16,6 +16,8 @@ import android.widget.Toast;
 import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
+import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
@@ -52,16 +54,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
         
-        /**
-         * 可以配置自定义需要检测的IP地址
-         */
-        List<String> ips = new ArrayList<>();
-        ips.add("106.75.79.228");   // www.ucloud.cn
-        ips.add("115.239.210.27");  // www.baidu.com
-        mUCNetAnalysisManager.setCustomIps(ips);
-        
         txt_result = findViewById(R.id.txt_result);
         edit_host = findViewById(R.id.edit_host);
+        edit_host.setText("106.75.79.228\n115.239.210.27");
         mAlertBuilder = new AlertDialog.Builder(this);
         
         mProgressDialog = new ProgressDialog(this);
@@ -81,16 +76,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_analyse).setOnClickListener(this);
         findViewById(R.id.btn_net_status).setOnClickListener(this);
         
-        List<String> list = mUCNetAnalysisManager.getCustomIps();
-        StringBuffer sb = new StringBuffer();
-        if (list != null && !list.isEmpty())
-            for (String ip : list)
-                if (!TextUtils.isEmpty(ip))
-                    sb.append(ip + "\n");
-        
-        edit_host.setText(sb.toString().trim());
-        
-        mUCNetAnalysisManager.register(this);
+        UserDefinedData.Builder builder = new UserDefinedData.Builder();
+        builder.putParam(new UserDefinedData.UserDefinedParam("id", "This is a test data"));
+        UserDefinedData param = null;
+        try {
+            param = builder.create();
+        } catch (UCParamVerifyException e) {
+            e.printStackTrace();
+        }
+        /**
+         * register(listener, null) == register(listener)
+         */
+        mUCNetAnalysisManager.register(this, param);
     }
     
     private synchronized Handler getHandler() {
@@ -146,6 +143,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             }
             case R.id.btn_set_ips: {
+                /**
+                 * 可以配置自定义需要检测的IP地址
+                 */
                 edit_host.clearFocus();
                 txt_result.setText("");
                 String host = edit_host.getText().toString().trim();
