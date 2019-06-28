@@ -6,7 +6,9 @@ package com.ucloud.library.netanalysis.module;
  * E-mail: joshua.yin@ucloud.cn
  */
 public enum UCSdkStatus {
-    /** 注册模块成功 */
+    /**
+     * 注册模块成功
+     */
     REGISTER_SUCCESS,
     /**
      * appKey或者appSecret无效

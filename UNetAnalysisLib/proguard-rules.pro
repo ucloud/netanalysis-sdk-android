@@ -63,20 +63,8 @@
     public static final android.os.Parcelable$Creator *;
 }
 
-# Keep - Library. Keep all public and protected classes, fields, and methods.
-#-keep public class * {
-#    public <fields>;
-#    public <methods>;
-#}
-
 # -------------------------------------------------------------
-# com.ucloud.library.netanalysislib.UCNetAnalysisManager
-#-keep class com.ucloud.library.netanalysis.UCNetAnalysisManager {
-#    public <fields>;
-#    public <methods>;
-#}
-
-# com.ucloud.library.netanalysislib.**
+# Keep - Library. Keep all public and protected classes, fields, and methods.
 -keep class com.ucloud.library.netanalysis.** {
     public <fields>;
     public <methods>;

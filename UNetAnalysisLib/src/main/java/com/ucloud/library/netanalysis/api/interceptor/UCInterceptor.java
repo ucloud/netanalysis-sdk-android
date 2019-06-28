@@ -11,6 +11,7 @@ import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okhttp3.internal.http.StatusLine;
 import okio.Buffer;
 import okio.BufferedSource;
 
@@ -54,6 +55,23 @@ public class UCInterceptor implements Interceptor {
         //打印请求耗时
         JLog.V(TAG, "[耗时]:" + tookMs + "ms");
         //使用response获得headers(),可以更新本地Cookie。
+        
+        if (307 == response.code()) {
+            JLog.T(TAG, "[response-code]:" + response.code());
+            JLog.T(TAG, "[response-headers]:" + response.headers().toString());
+            String location = response.headers().get("Location");
+            String protocol = request.url().url().getProtocol();
+            String host = request.url().url().getHost();
+            int port = request.url().url().getPort();
+            StringBuilder url = new StringBuilder();
+            url.append(protocol).append("://").append(host).append(port == -1 ? (location) : (":" + port + location));
+            Request newReq = request.newBuilder().url(url.toString()).build();
+            try {
+                response = chain.proceed(newReq);
+            } catch (Exception e) {
+                throw e;
+            }
+        }
         JLog.T(TAG, "[response-code]:" + response.code());
         JLog.T(TAG, "[response-headers]:" + response.headers().toString());
         
