@@ -24,7 +24,6 @@ import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.HexFormatter;
-import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -43,7 +42,6 @@ import javax.crypto.NoSuchPaddingException;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -113,27 +111,29 @@ final class UCApiManager {
     /**
      * 获取移动端公网IP信息
      *
-     * @param callback 回调接口 {@link PublicIpBean}
+     * @return 公网IP信息 {@link PublicIpBean}
+     * @throws IOException
      */
-    void apiGetPublicIpInfo(Callback<PublicIpBean> callback) {
+    Response<PublicIpBean> apiGetPublicIpInfo() throws IOException {
         Call<PublicIpBean> call = apiService.getPublicIpInfo(BuildConfig.UCLOUD_API_IPIP);
-        call.enqueue(callback);
+        return call.execute();
     }
     
     /**
      * 获取UCloud需要监测的IP列表，以及上报服务器列表
      *
      * @param ipInfoBean 终端外网IP信息 {@link IpInfoBean}
-     * @param callback   回调接口 {@link UCApiResponseBean}<{@link IpListBean}>
+     * @return {@link UCApiResponseBean}<{@link IpListBean}>
+     * @throws IOException
      */
-    void apiGetPingList(IpInfoBean ipInfoBean, Callback<UCApiResponseBean<IpListBean>> callback) {
+    Response<UCApiResponseBean<IpListBean>> apiGetPingList(IpInfoBean ipInfoBean) throws IOException {
         UCGetIpListRequestBean requestBean = new UCGetIpListRequestBean(appKey);
         if (ipInfoBean != null) {
             requestBean.setLongitude(ipInfoBean.getLongitude());
             requestBean.setLatitude(ipInfoBean.getLatitude());
         }
         Call<UCApiResponseBean<IpListBean>> call = apiService.getPingList(requestBean);
-        call.enqueue(callback);
+        return call.execute();
     }
     
     /**
@@ -148,8 +148,8 @@ final class UCApiManager {
      * @throws IOException
      */
     Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean
-            pingData, int pingStatus, boolean isCustomIp,
-                                                           IpInfoBean srcIpInfo, UserDefinedData userDefinedData) throws IOException {
+            pingData, int pingStatus, boolean isCustomIp, IpInfoBean srcIpInfo,
+                                                           UserDefinedData userDefinedData) throws IOException {
         ReportPingTagBean reportTag = new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL());
         reportTag.setCus(isCustomIp);
         ReportPingBean report = new ReportPingBean(appKey, pingData, pingStatus,

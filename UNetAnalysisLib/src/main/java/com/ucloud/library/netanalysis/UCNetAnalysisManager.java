@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
@@ -55,8 +54,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
-import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
@@ -276,7 +273,6 @@ public class UCNetAnalysisManager {
                 }
             };
             
-            
             checkDomain();
             
             for (String ip : customIps)
@@ -465,84 +461,76 @@ public class UCNetAnalysisManager {
             
             clearIpList();
             System.gc();
-            doGetPublicIpInfo();
+            mCmdThreadPool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    doGetPublicIpInfo();
+                    synchronized (flag) {
+                        flag = false;
+                    }
+                    doGetIpList();
+                }
+            });
+            
         }
     }
     
     private void doGetPublicIpInfo() {
-        mApiManager.apiGetPublicIpInfo(new Callback<PublicIpBean>() {
-            @Override
-            public void onResponse(Call<PublicIpBean> call, Response<PublicIpBean> response) {
-                if (response == null || response.body() == null) {
-                    JLog.I(TAG, "apiGetPublicIpInfo: response is null");
-                    return;
-                }
-                
-                mCurSrcIpInfo = response.body().getIpInfo();
-                mCurSrcIpInfo.setNetType(checkNetworkStatus().getNetStatus().getValue());
-                doGetIpList();
-                synchronized (flag) {
-                    flag = false;
-                }
+        try {
+            Response<PublicIpBean> response = mApiManager.apiGetPublicIpInfo();
+            if (response == null || response.body() == null) {
+                JLog.I(TAG, "apiGetPublicIpInfo: response is null");
+                return;
             }
             
-            @Override
-            public void onFailure(Call<PublicIpBean> call, Throwable t) {
-                JLog.I(TAG, "apiGetPublicIpInfo failed:", t);
-                synchronized (flag) {
-                    flag = false;
-                }
-            }
-        });
+            mCurSrcIpInfo = response.body().getIpInfo();
+            mCurSrcIpInfo.setNetType(checkNetworkStatus().getNetStatus().getValue());
+        } catch (IOException e) {
+            JLog.I(TAG, "apiGetPublicIpInfo error:\n" + e.getMessage());
+        }
     }
     
     private void doGetIpList() {
-        mApiManager.apiGetPingList(mCurSrcIpInfo, new Callback<UCApiResponseBean<IpListBean>>() {
-            @Override
-            public void onResponse(Call<UCApiResponseBean<IpListBean>> call, Response<UCApiResponseBean<IpListBean>> response) {
-                if (response == null || response.body() == null) {
-                    JLog.I(TAG, "apiGetPingList: response is null");
-                    return;
-                }
-                
-                UCApiResponseBean<IpListBean> body = response.body();
-                if (body == null) {
-                    JLog.I(TAG, "apiGetPingList: body is null");
-                    return;
-                }
-                
-                if (body.getMeta() == null) {
-                    if (body.getMeta().getCode() != 200)
-                        JLog.I(TAG, body.getMeta().toString());
-                    
-                    JLog.I(TAG, "meta is null !");
-                    return;
-                }
-                
-                if (body.getData() == null) {
-                    JLog.I(TAG, "data is null !");
-                    return;
-                }
-                
-                mCacheLock.lock();
-                if (randomIpList(body.getData())) {
-                    mIpListCache = body.getData();
-                    mReportAddr = mIpListCache.getUrl();
-                    mDomain = mIpListCache.getDomain();
-                }
-                mCacheLock.unlock();
-                
-                checkDomain();
-                enqueueAuto();
-                enqueueCustom();
+        try {
+            Response<UCApiResponseBean<IpListBean>> response = mApiManager.apiGetPingList(mCurSrcIpInfo);
+            if (response == null || response.body() == null) {
+                JLog.I(TAG, "apiGetPingList: response is null");
+                return;
             }
             
-            @Override
-            public void onFailure(Call<UCApiResponseBean<IpListBean>> call, Throwable t) {
-                JLog.I(TAG, "apiGetPingList failed:", t);
-                
+            UCApiResponseBean<IpListBean> body = response.body();
+            if (body == null) {
+                JLog.I(TAG, "apiGetPingList: body is null");
+                return;
             }
-        });
+            
+            if (body.getMeta() == null) {
+                if (body.getMeta().getCode() != 200)
+                    JLog.I(TAG, body.getMeta().toString());
+                
+                JLog.I(TAG, "meta is null !");
+                return;
+            }
+            
+            if (body.getData() == null) {
+                JLog.I(TAG, "data is null !");
+                return;
+            }
+            
+            mCacheLock.lock();
+            if (randomIpList(body.getData())) {
+                mIpListCache = body.getData();
+                mReportAddr = mIpListCache.getUrl();
+                mDomain = mIpListCache.getDomain();
+            }
+            mCacheLock.unlock();
+            
+            checkDomain();
+            enqueueAuto();
+            enqueueCustom();
+        } catch (IOException e) {
+            JLog.I(TAG, "apiGetPingList error:\n" + e.getMessage());
+        }
     }
     
     private boolean randomIpList(IpListBean bean) {
