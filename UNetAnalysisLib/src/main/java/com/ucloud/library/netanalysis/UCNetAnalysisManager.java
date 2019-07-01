@@ -468,6 +468,8 @@ public class UCNetAnalysisManager {
                     synchronized (flag) {
                         flag = false;
                     }
+                    if (mCurSrcIpInfo == null)
+                        return;
                     doGetIpList();
                 }
             });
