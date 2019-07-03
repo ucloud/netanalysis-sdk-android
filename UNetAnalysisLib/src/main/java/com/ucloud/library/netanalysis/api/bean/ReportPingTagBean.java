@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
 
 /**
  * Created by joshua on 2018/12/27 13:31.
@@ -8,9 +8,9 @@ import com.google.gson.annotations.SerializedName;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportPingTagBean extends ReportTagBean {
-    @SerializedName("dst_ip")
+    @JsonParam("dst_ip")
     private String dstIp;
-    @SerializedName("TTL")
+    @JsonParam("TTL")
     private int TTL = 0;
     
     public ReportPingTagBean(String appId, String dstIp, int TTL) {

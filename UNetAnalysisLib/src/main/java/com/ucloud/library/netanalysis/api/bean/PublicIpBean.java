@@ -1,17 +1,20 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 17:26.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class PublicIpBean {
-    @SerializedName("ret")
+public class PublicIpBean implements JsonSerializable {
+    @JsonParam("ret")
     private String ret;
-    @SerializedName("data")
+    @JsonParam("data")
     private IpInfoBean ipInfo;
     
     public String getRet() {
@@ -32,6 +35,19 @@ public class PublicIpBean {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("ret", ret);
+            json.put("data", ipInfo.toJson());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return json;
     }
 }

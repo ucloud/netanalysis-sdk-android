@@ -1,57 +1,75 @@
 package com.ucloud.library.netanalysis.module;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/9/19 15:07.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class IpReport {
-    @SerializedName("IP")
+public class IpReport implements JsonSerializable {
+    @JsonParam("IP")
     private String ip;
-    @SerializedName("AverageDelay")
+    @JsonParam("AverageDelay")
     private int averageDelay;
-    @SerializedName("PackageLossRate")
+    @JsonParam("PackageLossRate")
     private int packageLossRate;
-    @SerializedName("NetStatus")
+    @JsonParam("NetStatus")
     private UCNetStatus netStatus;
-    
+
     public String getIp() {
         return ip;
     }
-    
+
     public void setIp(String ip) {
         this.ip = ip;
     }
-    
+
     public int getAverageDelay() {
         return averageDelay;
     }
-    
+
     public void setAverageDelay(int averageDelay) {
         this.averageDelay = averageDelay;
     }
-    
+
     public int getPackageLossRate() {
         return packageLossRate;
     }
-    
+
     public void setPackageLossRate(int packageLossRate) {
         this.packageLossRate = packageLossRate;
     }
-    
+
     public UCNetStatus getNetStatus() {
         return netStatus;
     }
-    
+
     public void setNetStatus(UCNetStatus netStatus) {
         this.netStatus = netStatus;
     }
-    
+
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("IP", ip);
+            json.put("AverageDelay", averageDelay);
+            json.put("PackageLossRate", packageLossRate);
+            json.put("NetStatus", netStatus.name());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return json;
     }
 }

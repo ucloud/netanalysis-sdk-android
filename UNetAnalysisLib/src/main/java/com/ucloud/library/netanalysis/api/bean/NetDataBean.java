@@ -1,17 +1,20 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 16:40.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class NetDataBean {
-    @SerializedName("dst_ip")
+public class NetDataBean implements JsonSerializable {
+    @JsonParam("dst_ip")
     protected String dst_ip;
-    @SerializedName("timestamp")
+    @JsonParam("timestamp")
     protected long timestamp;
     
     public String getDst_ip() {
@@ -32,6 +35,19 @@ public class NetDataBean {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("dst_ip", dst_ip);
+            json.put("timestamp", timestamp);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return json;
     }
 }

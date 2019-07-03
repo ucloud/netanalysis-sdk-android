@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
 
 /**
@@ -9,18 +9,18 @@ import com.ucloud.library.netanalysis.module.UserDefinedData;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UCReportBean extends UCApiBaseRequestBean {
-    @SerializedName("action")
+    @JsonParam("action")
     protected String action;
-    @SerializedName("timestamp")
+    @JsonParam("timestamp")
     protected long timestamp;
-    @SerializedName("tag")
+    @JsonParam("tag")
     protected String tag;
-    @SerializedName("ip_info")
+    @JsonParam("ip_info")
     protected String ipInfo;
-    @SerializedName("user_defined")
+    @JsonParam("user_defined")
     protected String userDefinedStr;
     protected transient UserDefinedData userDefinedData;
-    @SerializedName("uuid")
+    @JsonParam("uuid")
     protected String uuid;
     
     public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {

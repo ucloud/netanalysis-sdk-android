@@ -2,12 +2,13 @@ package com.ucloud.library.netanalysis.command.net.traceroute;
 
 import android.text.TextUtils;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
 
-import java.util.ArrayList;
+import org.json.JSONObject;
+
 import java.util.List;
 
 /**
@@ -15,14 +16,14 @@ import java.util.List;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class TracerouteNodeResult extends UNetCommandResult {
-    @SerializedName("hop")
+public class TracerouteNodeResult extends UNetCommandResult implements JsonSerializable {
+    @JsonParam("hop")
     private int hop;
-    @SerializedName("routeIp")
+    @JsonParam("routeIp")
     private String routeIp;
-    @SerializedName("isFinalRoute")
+    @JsonParam("isFinalRoute")
     private boolean isFinalRoute;
-    @SerializedName("singleNodeList")
+    @JsonParam("singleNodeList")
     private List<SingleNodeResult> singleNodeList;
     
     protected TracerouteNodeResult(String targetIp, int hop, List<SingleNodeResult> singleNodeList) {
@@ -113,6 +114,11 @@ public class TracerouteNodeResult extends UNetCommandResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        return null;
     }
 }

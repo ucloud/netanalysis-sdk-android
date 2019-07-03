@@ -2,19 +2,22 @@ package com.ucloud.library.netanalysis.command.net.ping;
 
 
 import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
+
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/9/5 18:45.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class SinglePackagePingResult extends UNetCommandResult {
-    @SerializedName("delay")
+public class SinglePackagePingResult extends UNetCommandResult implements JsonSerializable {
+    @JsonParam("delay")
     protected float delaiy;
-    @SerializedName("TTL")
+    @JsonParam("TTL")
     protected int TTL;
     
     protected SinglePackagePingResult(String targetIp) {
@@ -47,6 +50,12 @@ public class SinglePackagePingResult extends UNetCommandResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        new Gson().toJson(this);
+        return null;
     }
 }

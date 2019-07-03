@@ -1,7 +1,9 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -11,7 +13,7 @@ import java.util.List;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class TracerouteDataBean extends NetDataBean {
-    @SerializedName("route_info")
+    @JsonParam("route_info")
     private List<RouteInfoBean> routeInfoList;
     
     public List<RouteInfoBean> getRouteInfoList() {
@@ -21,13 +23,13 @@ public class TracerouteDataBean extends NetDataBean {
     public void setRouteInfoList(List<RouteInfoBean> routeInfoList) {
         this.routeInfoList = routeInfoList;
     }
-    
-    public static class RouteInfoBean {
-        @SerializedName("delay")
+
+    public static class RouteInfoBean implements JsonSerializable {
+        @JsonParam("delay")
         private int delay;
-        @SerializedName("route_ip")
+        @JsonParam("route_ip")
         private String routeIp;
-        @SerializedName("loss")
+        @JsonParam("loss")
         private int loss;
         
         public int getDelay() {
@@ -56,7 +58,12 @@ public class TracerouteDataBean extends NetDataBean {
     
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
+        }
+
+        @Override
+        public JSONObject toJson() {
+            return null;
         }
     }
 }

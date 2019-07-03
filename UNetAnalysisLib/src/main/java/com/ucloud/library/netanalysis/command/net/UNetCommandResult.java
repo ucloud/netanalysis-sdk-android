@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.command.net;
 
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.command.bean.UCommandResult;
 
 /**
@@ -9,7 +9,7 @@ import com.ucloud.library.netanalysis.command.bean.UCommandResult;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UNetCommandResult extends UCommandResult {
-    @SerializedName("targetIp")
+    @JsonParam("targetIp")
     protected String targetIp;
     
     protected UNetCommandResult(String targetIp) {

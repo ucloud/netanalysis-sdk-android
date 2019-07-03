@@ -1,39 +1,42 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 16:27.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class IpInfoBean {
-    @SerializedName("addr")
+public class IpInfoBean implements JsonSerializable {
+    @JsonParam("addr")
     private String ip;
-    @SerializedName("city_name")
+    @JsonParam("city_name")
     private String cityName;
-    @SerializedName("continent_code")
+    @JsonParam("continent_code")
     private String continentCode;
-    @SerializedName("country_code")
+    @JsonParam("country_code")
     private String countryCode;
-    @SerializedName("country_name")
+    @JsonParam("country_name")
     private String countryName;
-    @SerializedName("isp_domain")
+    @JsonParam("isp_domain")
     private String ispDomain;
-    @SerializedName("latitude")
+    @JsonParam("latitude")
     private String latitude;
-    @SerializedName("longitude")
+    @JsonParam("longitude")
     private String longitude;
-    @SerializedName("owner_domain")
+    @JsonParam("owner_domain")
     private String ownerDomain;
-    @SerializedName("region_name")
+    @JsonParam("region_name")
     private String regionName;
-    @SerializedName("timezone")
+    @JsonParam("timezone")
     private String timezone;
-    @SerializedName("utc_offset")
+    @JsonParam("utc_offset")
     private String utcOffset;
-    @SerializedName("net_type")
+    @JsonParam("net_type")
     private String netType;
     
     public String getIp() {
@@ -156,6 +159,26 @@ public class IpInfoBean {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("addr", ip);
+            json.put("region_name", regionName);
+            json.put("country_name", countryName);
+            json.put("city_name", cityName);
+            json.put("isp_domain", ispDomain);
+            json.put("longitude", longitude);
+            json.put("latitude", latitude);
+            json.put("owner_domain", ownerDomain);
+            json.put("net_type", netType);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return json;
     }
 }

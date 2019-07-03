@@ -1,18 +1,20 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
+
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 16:26.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class ReportPingBean extends UCReportBean {
-    @SerializedName("ping_data")
+public class ReportPingBean extends UCReportBean implements JsonSerializable {
+    @JsonParam("ping_data")
     private ReportPingData pingData;
-    @SerializedName("ping_status")
+    @JsonParam("ping_status")
     private int pingStatus;
     
     public ReportPingBean(String appKey, PingDataBean pingData, int pingStatus,
@@ -41,11 +43,16 @@ public class ReportPingBean extends UCReportBean {
     public void setPingStatus(int pingStatus) {
         this.pingStatus = pingStatus;
     }
-    
-    public static class ReportPingData {
-        @SerializedName("delay")
+
+    @Override
+    public JSONObject toJson() {
+        return null;
+    }
+
+    public static class ReportPingData implements JsonSerializable {
+        @JsonParam("delay")
         private int delay;
-        @SerializedName("loss")
+        @JsonParam("loss")
         private int loss;
         
         public ReportPingData(int delay, int loss) {
@@ -71,7 +78,12 @@ public class ReportPingBean extends UCReportBean {
         
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
+        }
+
+        @Override
+        public JSONObject toJson() {
+            return null;
         }
     }
 }

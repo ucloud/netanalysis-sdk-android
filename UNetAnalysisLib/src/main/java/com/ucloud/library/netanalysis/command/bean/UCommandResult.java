@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.command.bean;
 
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
 
 /**
  * Created by joshua on 2018/9/4 11:03.
@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName;
  * E-mail: joshua.yin@ucloud.cn
  */
 public abstract class UCommandResult {
-    @SerializedName("status")
+    @JsonParam("status")
     protected UCommandStatus status;
     
     public UCommandStatus getStatus() {

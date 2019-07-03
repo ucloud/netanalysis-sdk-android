@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
 
 /**
  * Created by joshua on 2018/10/17 16:38.
@@ -8,11 +8,11 @@ import com.google.gson.annotations.SerializedName;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class PingDataBean extends NetDataBean{
-    @SerializedName("TTL")
+    @JsonParam("TTL")
     private int TTL;
-    @SerializedName("delay")
+    @JsonParam("delay")
     private int delay;
-    @SerializedName("loss")
+    @JsonParam("loss")
     private int loss;
     
     public int getTTL() {

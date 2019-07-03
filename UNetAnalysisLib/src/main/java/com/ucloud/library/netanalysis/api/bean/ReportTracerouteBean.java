@@ -1,8 +1,10 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +15,7 @@ import java.util.List;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportTracerouteBean extends UCReportBean {
-    @SerializedName("traceroute_data")
+    @JsonParam("traceroute_data")
     private ReportTracerouteData tracerouteData;
     
     public ReportTracerouteBean(String appKey, TracerouteDataBean tracerouteData, ReportTracerouteTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
@@ -32,15 +34,15 @@ public class ReportTracerouteBean extends UCReportBean {
         if (tracerouteData != null)
             this.tracerouteData = new ReportTracerouteData(tracerouteData.getRouteInfoList());
     }
-    
-    public static class ReportTracerouteData {
-        @SerializedName("route_info")
+
+    public static class ReportTracerouteData implements JsonSerializable {
+        @JsonParam("route_info")
         private transient List<TracerouteDataBean.RouteInfoBean> routeInfoList;
-        @SerializedName("route_list")
+        @JsonParam("route_list")
         private List<String> routeList;
-        @SerializedName("delay_list")
+        @JsonParam("delay_list")
         private List<Integer> delayList;
-        @SerializedName("loss_list")
+        @JsonParam("loss_list")
         private List<Integer> lossList;
         
         public ReportTracerouteData(List<TracerouteDataBean.RouteInfoBean> routeInfoList) {
@@ -74,7 +76,12 @@ public class ReportTracerouteBean extends UCReportBean {
         
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
+        }
+
+        @Override
+        public JSONObject toJson() {
+            return null;
         }
     }
 }

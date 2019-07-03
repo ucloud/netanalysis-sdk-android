@@ -1,9 +1,11 @@
 package com.ucloud.library.netanalysis.command.net.ping;
 
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +15,12 @@ import java.util.List;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class PingResult {
-    @SerializedName("targetIp")
+public class PingResult implements JsonSerializable {
+    @JsonParam("targetIp")
     private String targetIp;
-    @SerializedName("pingPackages")
+    @JsonParam("pingPackages")
     private List<SinglePackagePingResult> pingPackages;
-    @SerializedName("timestamp")
+    @JsonParam("timestamp")
     private long timestamp;
     
     protected PingResult(String targetIp, long timestamp) {
@@ -86,6 +88,11 @@ public class PingResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        return null;
     }
 }

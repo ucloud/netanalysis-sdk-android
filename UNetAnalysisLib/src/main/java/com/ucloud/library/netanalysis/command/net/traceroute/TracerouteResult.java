@@ -1,8 +1,9 @@
 package com.ucloud.library.netanalysis.command.net.traceroute;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
+import com.ucloud.library.netanalysis.annotation.JsonParam;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +13,12 @@ import java.util.List;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class TracerouteResult {
-    @SerializedName("targetIp")
+public class TracerouteResult implements JsonSerializable {
+    @JsonParam("targetIp")
     private String targetIp;
-    @SerializedName("tracerouteNodeResults")
+    @JsonParam("tracerouteNodeResults")
     private List<TracerouteNodeResult> tracerouteNodeResults;
-    @SerializedName("timestamp")
+    @JsonParam("timestamp")
     private long timestamp;
     
     public TracerouteResult(String targetIp, long timestamp) {
@@ -40,6 +41,11 @@ public class TracerouteResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+
+    @Override
+    public JSONObject toJson() {
+        return null;
     }
 }
