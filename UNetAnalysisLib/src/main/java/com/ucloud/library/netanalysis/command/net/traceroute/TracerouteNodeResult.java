@@ -2,11 +2,11 @@ package com.ucloud.library.netanalysis.command.net.traceroute;
 
 import android.text.TextUtils;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
-import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -16,14 +16,10 @@ import java.util.List;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class TracerouteNodeResult extends UNetCommandResult implements JsonSerializable {
-    @JsonParam("hop")
+public class TracerouteNodeResult extends UNetCommandResult {
     private int hop;
-    @JsonParam("routeIp")
     private String routeIp;
-    @JsonParam("isFinalRoute")
     private boolean isFinalRoute;
-    @JsonParam("singleNodeList")
     private List<SingleNodeResult> singleNodeList;
     
     protected TracerouteNodeResult(String targetIp, int hop, List<SingleNodeResult> singleNodeList) {
@@ -94,7 +90,7 @@ public class TracerouteNodeResult extends UNetCommandResult implements JsonSeria
             count++;
             total += node.delay;
         }
-    
+        
         return Math.round(total / count);
     }
     
@@ -116,9 +112,30 @@ public class TracerouteNodeResult extends UNetCommandResult implements JsonSeria
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
-        return null;
+        JSONObject json = super.toJson();
+        JSONArray jarr = new JSONArray();
+        if (singleNodeList != null && !singleNodeList.isEmpty()) {
+            for (SingleNodeResult result : singleNodeList) {
+                if (result == null || result.toJson().length() == 0)
+                    continue;
+                
+                jarr.put(result.toJson());
+            }
+        }
+        try {
+            json.put("hop", hop);
+            json.put("routeIp", routeIp);
+            json.put("delay", averageDelay());
+            json.put("loss", lossRate());
+            json.put("isFinalRoute", isFinalRoute);
+            json.put("singleNodeList", jarr);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

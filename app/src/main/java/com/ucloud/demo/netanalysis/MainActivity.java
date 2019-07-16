@@ -21,6 +21,7 @@ import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
+import com.ucloud.library.netanalysis.utils.UCConfig;
 import com.ucloud.library.netanalysis.utils.JLog;
 
 import org.json.JSONException;
@@ -36,9 +37,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ProgressDialog mProgressDialog;
     private AlertDialog.Builder mAlertBuilder;
     
-    static {
-        JLog.SHOW_DEBUG = true;
-    }
+    /**
+     * 定义设置项
+     * new UCConfig() : 默认LogLevel.RELEASE
+     */
+    private UCConfig config = new UCConfig(UCConfig.LogLevel.DEBUG);
     
     private UCNetAnalysisManager mUCNetAnalysisManager;
     
@@ -52,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret);
+        mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret, config);
         
         txt_result = findViewById(R.id.txt_result);
         edit_host = findViewById(R.id.edit_host);
@@ -125,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mUCNetAnalysisManager.analyse(new OnAnalyseListener() {
                     @Override
                     public void onAnalysed(final UCAnalysisResult result) {
-                        JLog.E("TEST", result.toString());
+                        JLog.I(TAG, result.toString());
                         getHandler().post(new Runnable() {
                             @Override
                             public void run() {
@@ -175,13 +178,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     
     @Override
     public void onRegister(UCSdkStatus status) {
-        JLog.D(TAG, "onRegister--->" + status.name());
+        JLog.I(TAG, "onRegister--->" + status.name());
         Toast.makeText(this, status.name(), Toast.LENGTH_SHORT).show();
     }
     
     @Override
     public void onNetworkStatusChanged(UCNetworkInfo networkInfo) {
-        JLog.D(TAG, "onNetworkStatusChanged--->" + networkInfo.toString());
+        JLog.I(TAG, "onNetworkStatusChanged--->" + networkInfo.toString());
         Toast.makeText(this, networkInfo.toString(), Toast.LENGTH_SHORT).show();
     }
 }

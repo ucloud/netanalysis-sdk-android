@@ -1,6 +1,5 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
 import org.json.JSONException;
@@ -12,7 +11,6 @@ import org.json.JSONObject;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UCReportEncryptBean implements JsonSerializable {
-    @JsonParam("data")
     protected String data;
     
     public UCReportEncryptBean(String data) {
@@ -31,16 +29,15 @@ public class UCReportEncryptBean implements JsonSerializable {
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         try {
-            json.put(data, data);
+            json.put("data", data);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
         return json;
     }
 }

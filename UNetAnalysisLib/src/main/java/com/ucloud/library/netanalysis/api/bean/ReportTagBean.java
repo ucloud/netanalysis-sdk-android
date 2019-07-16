@@ -1,6 +1,5 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.UCNetAnalysisManager;
 
 import java.util.Locale;
@@ -12,15 +11,10 @@ import java.util.TimeZone;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportTagBean {
-    @JsonParam("app_id")
     protected String appId;
-    @JsonParam("platform")
     protected int platform = 0;
-    @JsonParam("s_ver")
     protected final String sdkVersion = UCNetAnalysisManager.SDK_VERSION;
-    @JsonParam("cus")
     protected int cus = 0;
-    @JsonParam("tz")
     protected String timezone;
     
     protected ReportTagBean(String appId) {

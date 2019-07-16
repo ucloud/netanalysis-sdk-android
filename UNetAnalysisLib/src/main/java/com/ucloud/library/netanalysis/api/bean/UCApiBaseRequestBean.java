@@ -1,8 +1,8 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -11,7 +11,6 @@ import org.json.JSONObject;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UCApiBaseRequestBean implements JsonSerializable {
-    @JsonParam("app_key")
     protected String appKey;
     
     public UCApiBaseRequestBean(String appKey) {
@@ -27,12 +26,13 @@ public class UCApiBaseRequestBean implements JsonSerializable {
     }
     
     @Override
-    public String toString() {
-        return toJson().toString();
-    }
-
-    @Override
     public JSONObject toJson() {
-        return null;
+        JSONObject json = new JSONObject();
+        try {
+            json.put("app_key", appKey);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

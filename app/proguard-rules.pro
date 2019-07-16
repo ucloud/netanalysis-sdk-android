@@ -20,7 +20,6 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-
 -target 1.8
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
 -optimizationpasses 5
@@ -69,18 +68,6 @@
 -keep class com.ucloud.library.netanalysis.** {
     public <fields>;
     public <methods>;
-}
-
-# -------------------------------------------------------------
-# Retrofit2
--keep class * extends retrofit2.Callback {
-    *;
-}
-
-# -------------------------------------------------------------
-# Gson
--keep class com.google.gson.** {
-    *;
 }
 
 # -------------------------------------------------------------

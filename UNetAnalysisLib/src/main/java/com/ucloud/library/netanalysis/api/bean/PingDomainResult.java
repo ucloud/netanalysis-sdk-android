@@ -1,9 +1,8 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
-import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.ping.PingResult;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,47 +13,45 @@ import org.json.JSONObject;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class PingDomainResult implements JsonSerializable {
-    @JsonParam("PingResult")
     private PingResult pingResult;
-    @JsonParam("CommandStatus")
     private UCommandStatus status;
-
+    
     public PingDomainResult(PingResult pingResult, UCommandStatus status) {
         this.pingResult = pingResult;
         this.status = status;
     }
-
+    
     public PingResult getPingResult() {
         return pingResult;
     }
-
+    
     public void setPingResult(PingResult pingResult) {
         this.pingResult = pingResult;
     }
-
+    
     public UCommandStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(UCommandStatus status) {
         this.status = status;
     }
-
+    
     @Override
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         try {
             json.put("PingResult", pingResult == null ? JSONObject.NULL : pingResult.toJson());
-            json.put("CommandStatus", status.name());
+            json.put("CommandStatus", status == null ? JSONObject.NULL : status.name());
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
+        
         return json;
     }
 }

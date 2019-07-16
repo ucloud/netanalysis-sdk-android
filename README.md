@@ -6,29 +6,20 @@
 
 ## 运行环境
 ### Android
-- Android系统版本：**2.3.3** (API 10)及以上
-
+- Android系统版本：**4.1** (API 16)及以上
 
 </br></br>
 
 ## 使用
-### Dependencies
-NetAnalysis SDK依赖于Gson、Retrofit2.0
-- 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在app模块的build.gradle的dependencies中建立依赖
-- 在app模块的build.gradle的dependencies中添加
+### makeJar
+* 在`SDK项目根目录`/UNetAnalysisLib/build.gradle 中有`makeJar`和`makeProguardJar`两个task，分别是编译普通jar和混淆后的jar
+* 图解：
 
-    ``` java
-    dependencies {
-        /** 
-         * your other dependencies
-         */ 
-        implementation 'com.google.code.gson:gson:2.8.5'
-        implementation 'com.squareup.retrofit2:retrofit:2.4.0'
-        implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
-    }
-    ```
-    
-- 也可以下载第三方库Jar包集合：[netanalysissdk-3rd-part-jars.zip](http://ucloud-jar.cn-sh2.ufileos.com/netanalysissdk-3rd-part-jars.zip)
+    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155134.png)
+    ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155422.png)
+
+### Dependencies
+- 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在app模块的build.gradle的dependencies中建立依赖
 
 </br>
 
@@ -56,18 +47,6 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
     }
     
     # -------------------------------------------------------------
-    # Retrofit2
-    -keep class * extends retrofit2.Callback {
-        *;
-    }
-    
-    # -------------------------------------------------------------
-    # Gson
-    -keep class com.google.gson.** {
-        *;
-    }
-    
-    # -------------------------------------------------------------
     # Also keep - Enumerations. Keep the special static methods that are required in
     # enumeration classes.
     -keepclassmembers enum * {
@@ -84,6 +63,16 @@ NetAnalysis SDK依赖于Gson、Retrofit2.0
 // 使用Application Context 构建UCNetAnalysisManager实例
 String appKey = "UCloud为您的APP分配的APP_KEY";
 String appSecret = "UCloud为您的APP分配的APP_SECRET";
+
+/**
+ * 定义设置项
+ * new UCConfig() : 默认LogLevel.RELEASE
+ */
+UCConfig config = new UCConfig(UCConfig.LogLevel.DEBUG);
+
+UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext(), appKey, appSecret, config);
+
+// or: 使用默认new UCConfig(), Log级别RELEASE
 UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext(), appKey, appSecret);
 
 // SDK回调
@@ -165,7 +154,7 @@ protected void onDestroy(){
 ### UCNetAnalysisManager
 > UNetAnalysisSDK的主要模块，你将多次使用UCNetAnalysisManager的单例对象进行SDK业务接口的操作
 
-#### 创建UCNetAnalysisManager单例对象
+#### 创建默认Config的UCNetAnalysisManager单例对象
 ``` java
 public static UCNetAnalysisManager createManager(Context applicationContext, String appKey, String appSecret)
 ```
@@ -173,6 +162,17 @@ public static UCNetAnalysisManager createManager(Context applicationContext, Str
     -  applicationContext: application的context
     -  appKey: UCloud为您的APP分配的APP_KEY
     -  appSecret: UCloud为您的APP分配的APP_SECRET
+- **return**: UCNetAnalysisManager单例对象
+
+#### 创建自定义Config的UCNetAnalysisManager单例对象
+``` java
+public static UCNetAnalysisManager createManager(Context applicationContext, String appKey, String appSecret, UCConfig config)
+```
+- **param**:
+    -  applicationContext: application的context
+    -  appKey: UCloud为您的APP分配的APP_KEY
+    -  appSecret: UCloud为您的APP分配的APP_SECRET
+    -  config: 设置选项，详情见**UCConfig**说明
 - **return**: UCNetAnalysisManager单例对象
 
 #### 获取UCNetAnalysisManager单例对象
@@ -377,35 +377,26 @@ public enum UCNetStatus {
 ```
 
 </br></br>
-### JLog
-> Log打印工具
+### UCConfig
+> 设置选项
 
 ``` java
-public class JLog {
-    public static boolean SHOW_DEBUG = false;
-    public static boolean SHOW_VERBOSE = true;
-    public static boolean SHOW_INFO = true;
-    public static boolean SHOW_WARN = true;
-    public static boolean SHOW_ERROR = true;
+public class UCConfig {
     
-    public static void D(String TAG, String info) {
-        // ...
+    public enum LogLevel {
+        TEST,
+        DEBUG,
+        RELEASE
     }
     
-    public static void V(String TAG, String info) {
-        // ...
+    // 配置LogLevel
+    public UCConfig(UCConfig.LogLevel logLevel) {
+        // 构造方法
     }
-    
-    public static void I(String TAG, String info) {
-        // ...
-    }
-    
-    public static void W(String TAG, String info) {
-        // ...
-    }
-    
-    public static void E(String TAG, String info) {
-        // ...
+
+    // 默认 LogLevel.RELEASE
+    public UCConfig() {
+        // 构造方法
     }
 }
 ```

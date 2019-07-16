@@ -1,10 +1,11 @@
 package com.ucloud.library.netanalysis.command.net.ping;
 
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
-import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -16,11 +17,8 @@ import java.util.List;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class PingResult implements JsonSerializable {
-    @JsonParam("targetIp")
     private String targetIp;
-    @JsonParam("pingPackages")
     private List<SinglePackagePingResult> pingPackages;
-    @JsonParam("timestamp")
     private long timestamp;
     
     protected PingResult(String targetIp, long timestamp) {
@@ -54,11 +52,11 @@ public class PingResult implements JsonSerializable {
         int count = 0;
         float total = 0.f;
         for (SinglePackagePingResult pkg : pingPackages) {
-            if (pkg == null || pkg.getStatus() != UCommandStatus.CMD_STATUS_SUCCESSFUL || pkg.delaiy == 0.f)
+            if (pkg == null || pkg.getStatus() != UCommandStatus.CMD_STATUS_SUCCESSFUL || pkg.delay == 0.f)
                 continue;
             
             count++;
-            total += pkg.delaiy;
+            total += pkg.delay;
         }
         
         return Math.round(total / count);
@@ -68,7 +66,7 @@ public class PingResult implements JsonSerializable {
         int loss = 0;
         float total = pingPackages.size();
         for (SinglePackagePingResult pkg : pingPackages) {
-            if (pkg == null || pkg.getStatus() != UCommandStatus.CMD_STATUS_SUCCESSFUL || pkg.delaiy == 0.f)
+            if (pkg == null || pkg.getStatus() != UCommandStatus.CMD_STATUS_SUCCESSFUL || pkg.delay == 0.f)
                 loss++;
         }
         
@@ -77,7 +75,7 @@ public class PingResult implements JsonSerializable {
     
     public int accessTTL() {
         for (SinglePackagePingResult pkg : pingPackages) {
-            if (pkg == null || pkg.getStatus() != UCommandStatus.CMD_STATUS_SUCCESSFUL || pkg.delaiy == 0.f)
+            if (pkg == null || pkg.getStatus() != UCommandStatus.CMD_STATUS_SUCCESSFUL || pkg.delay == 0.f)
                 continue;
             
             return pkg.TTL;
@@ -90,9 +88,27 @@ public class PingResult implements JsonSerializable {
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
-        return null;
+        JSONObject json = new JSONObject();
+        JSONArray jarr = new JSONArray();
+        if (pingPackages != null && !pingPackages.isEmpty()) {
+            for (SinglePackagePingResult result : pingPackages) {
+                if (result == null || result.toJson().length() == 0)
+                    continue;
+                
+                jarr.put(result.toJson());
+            }
+        }
+        try {
+            json.put("targetIp", targetIp);
+            json.put("timestamp", timestamp);
+            json.put("pingPackages", jarr);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

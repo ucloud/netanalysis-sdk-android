@@ -1,6 +1,5 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
 import org.json.JSONException;
@@ -12,9 +11,7 @@ import org.json.JSONObject;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class NetDataBean implements JsonSerializable {
-    @JsonParam("dst_ip")
     protected String dst_ip;
-    @JsonParam("timestamp")
     protected long timestamp;
     
     public String getDst_ip() {
@@ -34,20 +31,16 @@ public class NetDataBean implements JsonSerializable {
     }
     
     @Override
-    public String toString() {
-        return toJson().toString();
-    }
-
-    @Override
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
+        
         try {
             json.put("dst_ip", dst_ip);
             json.put("timestamp", timestamp);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
+        
         return json;
     }
 }

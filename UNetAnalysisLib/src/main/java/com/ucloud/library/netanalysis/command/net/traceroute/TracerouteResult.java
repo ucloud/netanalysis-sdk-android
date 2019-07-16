@@ -1,8 +1,9 @@
 package com.ucloud.library.netanalysis.command.net.traceroute;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -14,11 +15,8 @@ import java.util.List;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class TracerouteResult implements JsonSerializable {
-    @JsonParam("targetIp")
     private String targetIp;
-    @JsonParam("tracerouteNodeResults")
     private List<TracerouteNodeResult> tracerouteNodeResults;
-    @JsonParam("timestamp")
     private long timestamp;
     
     public TracerouteResult(String targetIp, long timestamp) {
@@ -43,9 +41,27 @@ public class TracerouteResult implements JsonSerializable {
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
-        return null;
+        JSONObject json = new JSONObject();
+        JSONArray jarr = new JSONArray();
+        if (tracerouteNodeResults != null && !tracerouteNodeResults.isEmpty()) {
+            for (TracerouteNodeResult result : tracerouteNodeResults) {
+                if (result == null || result.toJson().length() == 0)
+                    continue;
+                
+                jarr.put(result.toJson());
+            }
+        }
+        try {
+            json.put("targetIp", targetIp);
+            json.put("timestamp", timestamp);
+            json.put("tracerouteNodeResults", jarr);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

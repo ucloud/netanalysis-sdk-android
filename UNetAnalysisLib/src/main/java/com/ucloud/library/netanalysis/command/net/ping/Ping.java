@@ -25,9 +25,9 @@ public class Ping implements UCommandPerformer {
     protected final String TAG = getClass().getSimpleName();
     private Config config;
     
-    private ExecutorService threadPool;
     private PingCallback callback;
     private boolean isUserStop = false;
+    private PingTask task;
     
     public Ping(@NonNull Config config, PingCallback callback) {
         this.config = config == null ? new Config("") : config;
@@ -40,47 +40,34 @@ public class Ping implements UCommandPerformer {
     
     @Override
     public void run() {
-        this.threadPool = Executors.newSingleThreadExecutor();
+        JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
         isUserStop = false;
         InetAddress inetAddress = null;
         try {
             inetAddress = config.parseTargetAddress();
         } catch (UnknownHostException e) {
-//             e.printStackTrace();
+            JLog.W(TAG, String.format("ping parse %s occur error:%s ", config.targetHost, e.getMessage()));
             if (callback != null)
                 callback.onPingFinish(null, UCommandStatus.CMD_STATUS_ERROR_UNKNOW_HOST);
             return;
         }
         
-        PingTask task = new PingTask(inetAddress, config.countPerRoute,
-                (callback instanceof PingCallback2 ? (PingCallback2) callback : null));
-        List<PingTask> list = new ArrayList<>();
-        list.add(task);
-        
-        List<SinglePackagePingResult> results = null;
         long timestamp = System.currentTimeMillis() / 1000;
-        try {
-            long start = SystemClock.elapsedRealtime();
-            results = threadPool.invokeAny(list);
-            JLog.D(TAG, "[invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
-        } catch (InterruptedException e) {
-//             e.printStackTrace();
-        } catch (ExecutionException e) {
-//             e.printStackTrace();
-        } finally {
-            stopTask();
-            
-            JLog.I(TAG, "[isUserStop]: " + isUserStop);
-            if (results == null) {
-                if (callback != null)
-                    callback.onPingFinish(null, UCommandStatus.CMD_STATUS_ERROR);
-                return;
-            }
-    
-            PingResult result = optResult(timestamp, results);
+        long start = SystemClock.elapsedRealtime();
+        task = new PingTask(inetAddress, config.countPerRoute,
+                (callback instanceof PingCallback2 ? (PingCallback2) callback : null));
+        List<SinglePackagePingResult> results = task.running();
+        JLog.D(TAG, "[command invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
+        
+        if (results == null) {
             if (callback != null)
-                callback.onPingFinish(result, isUserStop ? UCommandStatus.CMD_STATUS_USER_STOP : UCommandStatus.CMD_STATUS_SUCCESSFUL);
+                callback.onPingFinish(null, UCommandStatus.CMD_STATUS_ERROR);
+            return;
         }
+        
+        PingResult result = optResult(timestamp, results);
+        if (callback != null)
+            callback.onPingFinish(result, isUserStop ? UCommandStatus.CMD_STATUS_USER_STOP : UCommandStatus.CMD_STATUS_SUCCESSFUL);
     }
     
     private PingResult optResult(long timestamp, List<SinglePackagePingResult> res) {
@@ -93,25 +80,15 @@ public class Ping implements UCommandPerformer {
         return result;
     }
     
-    private void stopTask() {
-        if (threadPool != null && !threadPool.isShutdown()) {
-            JLog.D(TAG, "shutdown--->" + config.targetHost);
-            threadPool.shutdownNow();
-        }
-    }
-    
     @Override
     public void stop() {
         isUserStop = true;
-        stopTask();
+        if (task != null)
+            task.stop();
     }
     
     public Config getConfig() {
         return config;
-    }
-    
-    public boolean isRunning() {
-        return !threadPool.isTerminated();
     }
     
     public static class Config {

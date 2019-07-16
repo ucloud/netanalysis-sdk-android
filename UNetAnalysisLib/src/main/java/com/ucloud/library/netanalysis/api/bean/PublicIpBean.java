@@ -1,6 +1,5 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
 import org.json.JSONException;
@@ -12,9 +11,7 @@ import org.json.JSONObject;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class PublicIpBean implements JsonSerializable {
-    @JsonParam("ret")
     private String ret;
-    @JsonParam("data")
     private IpInfoBean ipInfo;
     
     public String getRet() {
@@ -37,17 +34,18 @@ public class PublicIpBean implements JsonSerializable {
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
+        
         try {
             json.put("ret", ret);
-            json.put("data", ipInfo.toJson());
+            json.put("data", ipInfo == null ? JSONObject.NULL : ipInfo.toJson());
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
+        
         return json;
     }
 }

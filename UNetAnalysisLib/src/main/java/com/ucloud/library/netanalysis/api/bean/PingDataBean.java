@@ -1,18 +1,16 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 16:38.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class PingDataBean extends NetDataBean{
-    @JsonParam("TTL")
+public class PingDataBean extends NetDataBean {
     private int TTL;
-    @JsonParam("delay")
     private int delay;
-    @JsonParam("loss")
     private int loss;
     
     public int getTTL() {
@@ -37,5 +35,25 @@ public class PingDataBean extends NetDataBean{
     
     public void setLoss(int loss) {
         this.loss = loss;
+    }
+    
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        
+        try {
+            json.put("TTL", TTL);
+            json.put("delay", delay);
+            json.put("loss", loss);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

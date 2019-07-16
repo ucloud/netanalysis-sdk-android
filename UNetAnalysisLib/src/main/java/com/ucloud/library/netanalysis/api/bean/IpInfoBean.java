@@ -1,6 +1,5 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
 import org.json.JSONException;
@@ -12,31 +11,18 @@ import org.json.JSONObject;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class IpInfoBean implements JsonSerializable {
-    @JsonParam("addr")
     private String ip;
-    @JsonParam("city_name")
     private String cityName;
-    @JsonParam("continent_code")
     private String continentCode;
-    @JsonParam("country_code")
     private String countryCode;
-    @JsonParam("country_name")
     private String countryName;
-    @JsonParam("isp_domain")
     private String ispDomain;
-    @JsonParam("latitude")
     private String latitude;
-    @JsonParam("longitude")
     private String longitude;
-    @JsonParam("owner_domain")
     private String ownerDomain;
-    @JsonParam("region_name")
     private String regionName;
-    @JsonParam("timezone")
     private String timezone;
-    @JsonParam("utc_offset")
     private String utcOffset;
-    @JsonParam("net_type")
     private String netType;
     
     public String getIp() {
@@ -158,27 +144,26 @@ public class IpInfoBean implements JsonSerializable {
     }
     
     @Override
-    public String toString() {
-        return toJson().toString();
-    }
-
-    @Override
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         try {
-            json.put("addr", ip);
-            json.put("region_name", regionName);
-            json.put("country_name", countryName);
-            json.put("city_name", cityName);
-            json.put("isp_domain", ispDomain);
-            json.put("longitude", longitude);
-            json.put("latitude", latitude);
-            json.put("owner_domain", ownerDomain);
-            json.put("net_type", netType);
+            json.put("addr", ip == null ? JSONObject.NULL : ip);
+            json.put("city_name", cityName == null ? JSONObject.NULL : cityName);
+            json.put("continent_code", continentCode == null ? JSONObject.NULL : continentCode);
+            json.put("country_code", countryCode == null ? JSONObject.NULL : countryCode);
+            json.put("region_name", regionName == null ? JSONObject.NULL : regionName);
+            json.put("country_name", countryName == null ? JSONObject.NULL : countryName);
+            json.put("isp_domain", ispDomain == null ? JSONObject.NULL : ispDomain);
+            json.put("longitude", longitude == null ? JSONObject.NULL : longitude);
+            json.put("latitude", latitude == null ? JSONObject.NULL : latitude);
+            json.put("owner_domain", ownerDomain == null ? JSONObject.NULL : ownerDomain);
+            json.put("timezone", timezone == null ? JSONObject.NULL : timezone);
+            json.put("utc_offset", utcOffset == null ? JSONObject.NULL : utcOffset);
+            json.put("net_type", netType == null ? JSONObject.NULL : netType);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
+        
         return json;
     }
 }

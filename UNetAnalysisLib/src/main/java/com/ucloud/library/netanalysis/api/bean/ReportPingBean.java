@@ -1,9 +1,9 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
-import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -11,10 +11,8 @@ import org.json.JSONObject;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class ReportPingBean extends UCReportBean implements JsonSerializable {
-    @JsonParam("ping_data")
+public class ReportPingBean extends UCReportBean {
     private ReportPingData pingData;
-    @JsonParam("ping_status")
     private int pingStatus;
     
     public ReportPingBean(String appKey, PingDataBean pingData, int pingStatus,
@@ -43,16 +41,9 @@ public class ReportPingBean extends UCReportBean implements JsonSerializable {
     public void setPingStatus(int pingStatus) {
         this.pingStatus = pingStatus;
     }
-
-    @Override
-    public JSONObject toJson() {
-        return null;
-    }
-
+    
     public static class ReportPingData implements JsonSerializable {
-        @JsonParam("delay")
         private int delay;
-        @JsonParam("loss")
         private int loss;
         
         public ReportPingData(int delay, int loss) {
@@ -80,10 +71,36 @@ public class ReportPingBean extends UCReportBean implements JsonSerializable {
         public String toString() {
             return toJson().toString();
         }
-
+        
         @Override
         public JSONObject toJson() {
-            return null;
+            JSONObject json = new JSONObject();
+            
+            try {
+                json.put("delay", delay);
+                json.put("loss", loss);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            
+            return json;
         }
+    }
+    
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        try {
+            json.put("ping_data", pingData == null ? JSONObject.NULL : pingData.toJson());
+            json.put("ping_status", pingStatus);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

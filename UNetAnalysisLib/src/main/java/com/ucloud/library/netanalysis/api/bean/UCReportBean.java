@@ -1,7 +1,9 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 16:31.
@@ -9,18 +11,12 @@ import com.ucloud.library.netanalysis.module.UserDefinedData;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UCReportBean extends UCApiBaseRequestBean {
-    @JsonParam("action")
     protected String action;
-    @JsonParam("timestamp")
     protected long timestamp;
-    @JsonParam("tag")
     protected String tag;
-    @JsonParam("ip_info")
     protected String ipInfo;
-    @JsonParam("user_defined")
     protected String userDefinedStr;
-    protected transient UserDefinedData userDefinedData;
-    @JsonParam("uuid")
+    protected UserDefinedData userDefinedData;
     protected String uuid;
     
     public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
@@ -92,5 +88,26 @@ public class UCReportBean extends UCApiBaseRequestBean {
     
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+    
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        try {
+            json.put("action", action);
+            json.put("timestamp", timestamp);
+            json.put("tag", tag);
+            json.put("ip_info", ipInfo);
+            json.put("user_defined", userDefinedStr);
+            json.put("uuid", uuid);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

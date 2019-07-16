@@ -45,43 +45,41 @@ final class TracerouteTask extends UNetCommandTask<TracerouteNodeResult> {
     
     @Override
     public TracerouteNodeResult call() throws Exception {
-        resultData = running();
-        if (callback != null)
-            callback.onTracerouteNode(resultData);
-        return resultData;
+        return running();
     }
     
-    private TracerouteNodeResult running() {
+    protected TracerouteNodeResult running() {
         isRunning = true;
         
         String targetIp = targetAddress == null ? "" : targetAddress.getHostAddress();
         command = String.format("ping -c 1 -W 1 -t %d %s", hop, targetIp);
         
         currentCount = 0;
-        long startTime = SystemClock.elapsedRealtime();
+        
         List<SingleNodeResult> singleNodeList = new ArrayList<>();
-        while (isRunning && (currentCount < count)) {
+        while ((isRunning = !Thread.currentThread().isInterrupted()) && (currentCount < count)) {
             try {
+                long startTime = SystemClock.elapsedRealtime();
                 SingleNodeResult nodeResult = parseSingleNodeInfoInput(execCommand(command));
                 float delay = (SystemClock.elapsedRealtime() - startTime) / 2.f;
-    
+                JLog.T(TAG, String.format("[thread]:%d, [trace singleNode]:%s", Thread.currentThread().getId(), nodeResult.toString()));
                 if (!nodeResult.isFinalRoute()
                         && nodeResult.getStatus() == UCommandStatus.CMD_STATUS_SUCCESSFUL)
                     nodeResult.setDelay(delay);
-    
+                
                 singleNodeList.add(nodeResult);
-            } catch (IOException e) {
-//                e.printStackTrace();
-            } catch (InterruptedException e) {
-//                e.printStackTrace();
+            } catch (IOException | InterruptedException e) {
+                JLog.I(TAG, String.format("traceroute[%d]: %s occur error: %s", currentCount, command, e.getMessage()));
             } finally {
                 currentCount++;
             }
         }
-    
+        
         resultData = new TracerouteNodeResult(targetAddress.getHostAddress(), hop, singleNodeList);
-        JLog.T(TAG, "[tranceroute(" + targetAddress.getHostAddress() + ") route]:" + (resultData == null ? "null" : resultData.toString()));
-        return resultData;
+        if (callback != null)
+            callback.onTracerouteNode(resultData);
+    
+        return isRunning ? resultData : null;
     }
     
     protected SingleNodeResult parseSingleNodeInfoInput(String input) {
@@ -122,7 +120,8 @@ final class TracerouteTask extends UNetCommandTask<TracerouteNodeResult> {
     
     @Override
     protected void parseErrorInfo(String error) {
-        JLog.T(TAG, "[hop]:" + hop + " [error data]:" + error);
+        if (!TextUtils.isEmpty(error))
+            JLog.T(TAG, "[hop]:" + hop + " [error data]:" + error);
         
     }
     

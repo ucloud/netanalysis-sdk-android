@@ -1,14 +1,11 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
-
 /**
  * Created by joshua on 2018/12/27 13:31.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportTracerouteTagBean extends ReportTagBean {
-    @JsonParam("dst_ip")
     private String dstIp;
     
     public ReportTracerouteTagBean(String appId, String dstIp) {

@@ -2,11 +2,10 @@ package com.ucloud.library.netanalysis.command.net.traceroute;
 
 import android.text.TextUtils;
 
-import com.ucloud.library.netanalysis.annotation.JsonParam;
-import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -14,21 +13,16 @@ import org.json.JSONObject;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class SingleNodeResult extends UNetCommandResult implements JsonSerializable {
-    @JsonParam("hop")
+public class SingleNodeResult extends UNetCommandResult {
     private int hop;
-    @JsonParam("routeIp")
     private String routeIp;
-    @JsonParam("isFinalRoute")
     private boolean isFinalRoute;
-    @JsonParam("delay")
     protected float delay;
     
     protected SingleNodeResult(String targetIp, int hop) {
         super(targetIp);
         this.hop = hop;
-        isFinalRoute = false;
-        routeIp = "*";
+        setRouteIp("*");
         delay = 0.f;
     }
     
@@ -77,9 +71,18 @@ public class SingleNodeResult extends UNetCommandResult implements JsonSerializa
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
-        return null;
+        JSONObject json = super.toJson();
+        try {
+            json.put("hop", hop);
+            json.put("routeIp", routeIp);
+            json.put("delay", delay);
+            json.put("isFinalRoute", isFinalRoute);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

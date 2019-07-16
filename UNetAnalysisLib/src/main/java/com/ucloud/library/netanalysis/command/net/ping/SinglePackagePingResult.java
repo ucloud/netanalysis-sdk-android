@@ -1,12 +1,10 @@
 package com.ucloud.library.netanalysis.command.net.ping;
 
 
-import com.google.gson.Gson;
-import com.ucloud.library.netanalysis.annotation.JsonParam;
-import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -14,15 +12,13 @@ import org.json.JSONObject;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class SinglePackagePingResult extends UNetCommandResult implements JsonSerializable {
-    @JsonParam("delay")
-    protected float delaiy;
-    @JsonParam("TTL")
+public class SinglePackagePingResult extends UNetCommandResult {
+    protected float delay;
     protected int TTL;
     
     protected SinglePackagePingResult(String targetIp) {
         super(targetIp);
-        delaiy = 0.f;
+        delay = 0.f;
     }
     
     SinglePackagePingResult setStatus(UCommandStatus status) {
@@ -30,12 +26,12 @@ public class SinglePackagePingResult extends UNetCommandResult implements JsonSe
         return this;
     }
     
-    public float getDelaiy() {
-        return delaiy;
+    public float getDelay() {
+        return delay;
     }
     
-    public SinglePackagePingResult setDelaiy(float delaiy) {
-        this.delaiy = delaiy;
+    public SinglePackagePingResult setDelay(float delay) {
+        this.delay = delay;
         return this;
     }
     
@@ -52,10 +48,17 @@ public class SinglePackagePingResult extends UNetCommandResult implements JsonSe
     public String toString() {
         return toJson().toString();
     }
-
+    
     @Override
     public JSONObject toJson() {
-        new Gson().toJson(this);
-        return null;
+        JSONObject json = super.toJson();
+        try {
+            json.put("delay", delay);
+            json.put("TTL", TTL);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

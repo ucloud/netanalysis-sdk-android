@@ -5,6 +5,11 @@ import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.Base64;
 
+import com.ucloud.library.netanalysis.api.http.HttpMethod;
+import com.ucloud.library.netanalysis.api.http.Request;
+import com.ucloud.library.netanalysis.api.http.Response;
+import com.ucloud.library.netanalysis.api.http.UCHttpsClient;
+import com.ucloud.library.netanalysis.api.http.UCHttpClient;
 import com.ucloud.library.netanalysis.api.bean.IpInfoBean;
 import com.ucloud.library.netanalysis.api.bean.MessageBean;
 import com.ucloud.library.netanalysis.api.bean.PingDataBean;
@@ -19,11 +24,17 @@ import com.ucloud.library.netanalysis.api.bean.IpListBean;
 import com.ucloud.library.netanalysis.api.bean.UCGetIpListRequestBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportBean;
 import com.ucloud.library.netanalysis.api.bean.UCReportEncryptBean;
-import com.ucloud.library.netanalysis.api.interceptor.UCInterceptor;
-import com.ucloud.library.netanalysis.api.service.NetAnalysisApiService;
+import com.ucloud.library.netanalysis.exception.UCHttpException;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
+import com.ucloud.library.netanalysis.parser.JsonDeserializer;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.HexFormatter;
+import com.ucloud.library.netanalysis.utils.JLog;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -32,19 +43,14 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-
-import okhttp3.OkHttpClient;
-import retrofit2.Call;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by joshua on 2018/10/8 11:16.
@@ -54,41 +60,44 @@ import retrofit2.converter.gson.GsonConverterFactory;
 final class UCApiManager {
     private final String TAG = this.getClass().getSimpleName();
     
-    public static final long DEFAULT_CONNECT_TIMEOUT = 20 * 1000;
-    public static final long DEFAULT_WRITE_TIMEOUT = 20 * 1000;
-    public static final long DEFAULT_READ_TIMEOUT = 20 * 1000;
-    
     private final String KEY_SP_UUID = "uuid";
     
     private Context context;
+    private static volatile UCApiManager mInstance = null;
     private WeakReference<SharedPreferences> weakSharedPreferences;
-    private NetAnalysisApiService apiService;
+    
+    private UCHttpClient httpClient;
+    private UCHttpsClient httpsClient;
     
     private String appKey;
     private String appSecret;
     private String uuid;
     
-    protected UCApiManager(Context context, String appKey, String appSecret) {
+    private UCApiManager(Context context, String appKey, String appSecret) {
         this.context = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
         
-        prepareUuid();
+        new Thread() {
+            @Override
+            public void run() {
+                prepareUuid();
+            }
+        }.start();
+        httpClient = new UCHttpClient();
+        httpsClient = new UCHttpsClient();
+    }
+    
+    protected synchronized static UCApiManager create(Context context, String appKey, String appSecret) {
+        if (mInstance == null) {
+            mInstance = new UCApiManager(context, appKey, appSecret);
+        }
         
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
-                .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
-                .addInterceptor(new UCInterceptor())
-                .build();
-        
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(okHttpClient)
-                .baseUrl(BuildConfig.UCLOUD_API_IP_LIST)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        
-        apiService = retrofit.create(NetAnalysisApiService.class);
+        return mInstance;
+    }
+    
+    protected static UCApiManager getApiManager() {
+        return mInstance;
     }
     
     private void prepareUuid() {
@@ -112,11 +121,39 @@ final class UCApiManager {
      * 获取移动端公网IP信息
      *
      * @return 公网IP信息 {@link PublicIpBean}
-     * @throws IOException
+     * @throws UCHttpException
      */
-    Response<PublicIpBean> apiGetPublicIpInfo() throws IOException {
-        Call<PublicIpBean> call = apiService.getPublicIpInfo(BuildConfig.UCLOUD_API_IPIP);
-        return call.execute();
+    Response<PublicIpBean> apiGetPublicIpInfo() throws UCHttpException {
+        return httpsClient.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API_IPIP, HttpMethod.GET)
+                .build(), new JsonDeserializer<PublicIpBean>() {
+            @Override
+            public PublicIpBean fromJson(String json) throws JSONException {
+                PublicIpBean response = new PublicIpBean();
+                JSONObject jObj = new JSONObject(json);
+                String ret = jObj.optString("ret", "");
+                response.setRet(ret);
+                JSONObject jData = jObj.optJSONObject("data");
+                IpInfoBean bean = new IpInfoBean();
+                if (jData != null) {
+                    bean.setIp(jData.optString("addr"));
+                    bean.setCityName(jData.optString("city_name"));
+                    bean.setContinentCode(jData.optString("continent_code"));
+                    bean.setCountryCode(jData.optString("country_code"));
+                    bean.setCountryName(jData.optString("country_name"));
+                    bean.setIspDomain(jData.optString("isp_domain"));
+                    bean.setLatitude(jData.optString("latitude"));
+                    bean.setLongitude(jData.optString("longitude"));
+                    bean.setNetType(jData.optString("net_type"));
+                    bean.setOwnerDomain(jData.optString("owner_domain"));
+                    bean.setRegionName(jData.optString("region_name"));
+                    bean.setTimezone(jData.optString("timezone"));
+                    bean.setUtcOffset(jData.optString("utc_offset"));
+                }
+                response.setIpInfo(bean);
+                
+                return response;
+            }
+        });
     }
     
     /**
@@ -124,16 +161,65 @@ final class UCApiManager {
      *
      * @param ipInfoBean 终端外网IP信息 {@link IpInfoBean}
      * @return {@link UCApiResponseBean}<{@link IpListBean}>
-     * @throws IOException
+     * @throws UCHttpException
      */
-    Response<UCApiResponseBean<IpListBean>> apiGetPingList(IpInfoBean ipInfoBean) throws IOException {
+    Response<UCApiResponseBean<IpListBean>> apiGetPingList(final IpInfoBean ipInfoBean) throws UCHttpException {
         UCGetIpListRequestBean requestBean = new UCGetIpListRequestBean(appKey);
         if (ipInfoBean != null) {
             requestBean.setLongitude(ipInfoBean.getLongitude());
             requestBean.setLatitude(ipInfoBean.getLatitude());
         }
-        Call<UCApiResponseBean<IpListBean>> call = apiService.getPingList(requestBean);
-        return call.execute();
+        return httpsClient.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API_IP_LIST, HttpMethod.POST)
+                .path("iplist/getpinglist/")
+                .body(requestBean)
+                .build(), new JsonDeserializer<UCApiResponseBean<IpListBean>>() {
+            @Override
+            public UCApiResponseBean<IpListBean> fromJson(String json) throws JSONException {
+                UCApiResponseBean<IpListBean> response = new UCApiResponseBean<>();
+                JSONObject jObj = new JSONObject(json);
+                JSONObject meta = jObj.optJSONObject("meta");
+                if (meta != null) {
+                    UCApiResponseBean.MetaBean metaBean = new UCApiResponseBean.MetaBean();
+                    metaBean.setCode(meta.getInt("code"));
+                    metaBean.setError(meta.optString("error", ""));
+                    response.setMeta(metaBean);
+                }
+                JSONObject data = jObj.optJSONObject("data");
+                if (data != null) {
+                    IpListBean ipListBean = new IpListBean();
+                    ipListBean.setDomain(data.optString("domain", ""));
+                    
+                    List<String> url = new ArrayList<>();
+                    JSONArray arrUrl = data.optJSONArray("url");
+                    if (arrUrl != null) {
+                        for (int i = 0, len = arrUrl.length(); i < len; i++) {
+                            url.add(arrUrl.optString(i, ""));
+                        }
+                    }
+                    ipListBean.setUrl(url);
+                    
+                    List<IpListBean.InfoBean> info = new ArrayList<>();
+                    JSONArray arrInfo = data.optJSONArray("info");
+                    if (arrInfo != null) {
+                        for (int i = 0, len = arrInfo.length(); i < len; i++) {
+                            JSONObject jInfo = arrInfo.optJSONObject(i);
+                            if (jInfo == null)
+                                continue;
+                            IpListBean.InfoBean bean = new IpListBean.InfoBean();
+                            bean.setIp(jInfo.optString("ip", ""));
+                            bean.setLocation(jInfo.optString("location", ""));
+                            bean.setType(jInfo.optInt("type", 0));
+                            bean.setId(jInfo.optInt("id"));
+                            info.add(bean);
+                        }
+                    }
+                    ipListBean.setInfo(info);
+                    response.setData(ipListBean);
+                }
+                
+                return response;
+            }
+        });
     }
     
     /**
@@ -149,7 +235,7 @@ final class UCApiManager {
      */
     Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean
             pingData, int pingStatus, boolean isCustomIp, IpInfoBean srcIpInfo,
-                                                           UserDefinedData userDefinedData) throws IOException {
+                                                           UserDefinedData userDefinedData) throws UCHttpException {
         ReportPingTagBean reportTag = new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL());
         reportTag.setCus(isCustomIp);
         ReportPingBean report = new ReportPingBean(appKey, pingData, pingStatus,
@@ -160,8 +246,29 @@ final class UCApiManager {
         if (reportEncryptBean == null)
             return null;
         
-        Call<UCApiResponseBean<MessageBean>> call = apiService.reportPing(reportAddress, reportEncryptBean);
-        return call.execute();
+        return httpClient.execute(new Request.RequestBuilder<JsonSerializable>(reportAddress, HttpMethod.POST)
+                .body(reportEncryptBean)
+                .build(), new JsonDeserializer<UCApiResponseBean<MessageBean>>() {
+            @Override
+            public UCApiResponseBean<MessageBean> fromJson(String json) throws JSONException {
+                UCApiResponseBean<MessageBean> response = new UCApiResponseBean<>();
+                JSONObject jObj = new JSONObject(json);
+                JSONObject meta = jObj.optJSONObject("meta");
+                if (meta != null) {
+                    UCApiResponseBean.MetaBean metaBean = new UCApiResponseBean.MetaBean();
+                    metaBean.setCode(meta.getInt("code"));
+                    metaBean.setError(meta.optString("error", ""));
+                    response.setMeta(metaBean);
+                }
+                JSONObject data = jObj.optJSONObject("data");
+                if (data != null) {
+                    MessageBean message = new MessageBean();
+                    message.setMessage(data.optString("message", ""));
+                    response.setData(message);
+                }
+                return response;
+            }
+        });
     }
     
     /**
@@ -176,7 +283,7 @@ final class UCApiManager {
      * @throws IOException
      */
     Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, boolean isCustomIp,
-                                                                 IpInfoBean srcIpInfo, UserDefinedData userDefinedData) throws IOException {
+                                                                 IpInfoBean srcIpInfo, UserDefinedData userDefinedData) throws UCHttpException {
         ReportTracerouteTagBean reportTag = new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip());
         reportTag.setCus(isCustomIp);
         ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
@@ -188,8 +295,29 @@ final class UCApiManager {
         if (reportEncryptBean == null)
             return null;
         
-        Call<UCApiResponseBean<MessageBean>> call = apiService.reportTraceroute(reportAddress, reportEncryptBean);
-        return call.execute();
+        return httpClient.execute(new Request.RequestBuilder<JsonSerializable>(reportAddress, HttpMethod.POST)
+                .body(reportEncryptBean)
+                .build(), new JsonDeserializer<UCApiResponseBean<MessageBean>>() {
+            @Override
+            public UCApiResponseBean<MessageBean> fromJson(String json) throws JSONException {
+                UCApiResponseBean<MessageBean> response = new UCApiResponseBean<>();
+                JSONObject jObj = new JSONObject(json);
+                JSONObject meta = jObj.optJSONObject("meta");
+                if (meta != null) {
+                    UCApiResponseBean.MetaBean metaBean = new UCApiResponseBean.MetaBean();
+                    metaBean.setCode(meta.getInt("code"));
+                    metaBean.setError(meta.optString("error", ""));
+                    response.setMeta(metaBean);
+                }
+                JSONObject data = jObj.optJSONObject("data");
+                if (data != null) {
+                    MessageBean message = new MessageBean();
+                    message.setMessage(data.optString("message", ""));
+                    response.setData(message);
+                }
+                return response;
+            }
+        });
     }
     
     private static final int RSA_CRYPT_SRC_LIMIT = 128;
@@ -214,20 +342,9 @@ final class UCApiManager {
             reportBean.setUserDefinedStr(TextUtils.isEmpty(oriStrUserDefined) ? "" : encryptRSA(oriStrUserDefined, appSecret));
             encryptBean.setData(Base64.encodeToString(reportBean.toString().getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
             return encryptBean;
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (ArrayIndexOutOfBoundsException e) {
-            e.printStackTrace();
+        } catch (NoSuchPaddingException | InvalidKeySpecException | NoSuchAlgorithmException
+                | IllegalBlockSizeException | InvalidKeyException | BadPaddingException e) {
+            JLog.D(TAG, "encrypt report data error: " + e.getMessage());
         }
         
         return null;
