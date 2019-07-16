@@ -1,6 +1,7 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.annotations.SerializedName;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 15:44.
@@ -8,9 +9,7 @@ import com.google.gson.annotations.SerializedName;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class UCGetIpListRequestBean extends UCApiBaseRequestBean {
-    @SerializedName("longitude")
     private String longitude;
-    @SerializedName("latitude")
     private String latitude;
     
     public UCGetIpListRequestBean(String appKey) {
@@ -37,5 +36,22 @@ public class UCGetIpListRequestBean extends UCApiBaseRequestBean {
     
     public void setLatitude(String latitude) {
         this.latitude = latitude;
+    }
+    
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        try {
+            json.put("longitude", longitude);
+            json.put("latitude", latitude);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

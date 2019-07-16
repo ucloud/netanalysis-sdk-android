@@ -1,16 +1,12 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.annotations.SerializedName;
-
 /**
  * Created by joshua on 2018/12/27 13:31.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportPingTagBean extends ReportTagBean {
-    @SerializedName("dst_ip")
     private String dstIp;
-    @SerializedName("TTL")
     private int TTL = 0;
     
     public ReportPingTagBean(String appId, String dstIp, int TTL) {
@@ -41,5 +37,4 @@ public class ReportPingTagBean extends ReportTagBean {
         sb.append(String.format(",TTL=%d", TTL));
         return sb.toString();
     }
-    
 }

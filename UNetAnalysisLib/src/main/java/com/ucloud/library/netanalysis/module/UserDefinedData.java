@@ -3,11 +3,12 @@ package com.ucloud.library.netanalysis.module;
 import android.support.v4.util.ArrayMap;
 import android.text.TextUtils;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.annotations.SerializedName;
 import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -26,9 +27,9 @@ public class UserDefinedData {
     private static final String KEY_USER_DEFINED_PARAM = "key";
     private static final String VALUE_USER_DEFINED_PARAM = "val";
     
-    private JsonArray data;
+    private JSONArray data;
     
-    private UserDefinedData(JsonArray data) {
+    private UserDefinedData(JSONArray data) {
         this.data = data;
     }
     
@@ -59,7 +60,7 @@ public class UserDefinedData {
         }
         
         public UserDefinedData create() throws UCParamVerifyException {
-            JsonArray jArr = new JsonArray();
+            JSONArray jArr = new JSONArray();
             if (map == null)
                 return new UserDefinedData(jArr);
             
@@ -72,13 +73,18 @@ public class UserDefinedData {
                 String key = iterator.next();
                 if (TextUtils.isEmpty(key))
                     continue;
+    
+                JSONObject json = new JSONObject();
+                try {
+                    json.put(KEY_USER_DEFINED_PARAM, key);
+                    String val = map.get(key);
+                    json.put(VALUE_USER_DEFINED_PARAM, val == null ? "" : val);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    continue;
+                }
                 
-                JsonObject jObj = new JsonObject();
-                jObj.addProperty(KEY_USER_DEFINED_PARAM, key);
-                String val = map.get(key);
-                jObj.addProperty(VALUE_USER_DEFINED_PARAM, val == null ? "" : val);
-                
-                jArr.add(jObj);
+                jArr.put(json);
             }
             
             String res = jArr.toString();
@@ -91,10 +97,8 @@ public class UserDefinedData {
         
     }
     
-    public static class UserDefinedParam implements Serializable {
-        @SerializedName("key")
+    public static class UserDefinedParam implements Serializable, JsonSerializable {
         private String key;
-        @SerializedName("val")
         private String value;
         
         public UserDefinedParam(String key, String value) {
@@ -122,12 +126,24 @@ public class UserDefinedData {
         
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
+        }
+        
+        @Override
+        public JSONObject toJson() {
+            JSONObject json = new JSONObject();
+            try {
+                json.put(KEY_USER_DEFINED_PARAM, key);
+                json.put(VALUE_USER_DEFINED_PARAM, value);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json;
         }
     }
     
     @Override
     public String toString() {
-        return data == null || data.size() == 0 ? "" : data.toString();
+        return data == null || data.length() == 0 ? "" : data.toString();
     }
 }

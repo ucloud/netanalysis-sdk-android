@@ -2,12 +2,13 @@ package com.ucloud.library.netanalysis.command.net.traceroute;
 
 import android.text.TextUtils;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
 
-import java.util.ArrayList;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.List;
 
 /**
@@ -16,13 +17,9 @@ import java.util.List;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class TracerouteNodeResult extends UNetCommandResult {
-    @SerializedName("hop")
     private int hop;
-    @SerializedName("routeIp")
     private String routeIp;
-    @SerializedName("isFinalRoute")
     private boolean isFinalRoute;
-    @SerializedName("singleNodeList")
     private List<SingleNodeResult> singleNodeList;
     
     protected TracerouteNodeResult(String targetIp, int hop, List<SingleNodeResult> singleNodeList) {
@@ -93,7 +90,7 @@ public class TracerouteNodeResult extends UNetCommandResult {
             count++;
             total += node.delay;
         }
-    
+        
         return Math.round(total / count);
     }
     
@@ -113,6 +110,32 @@ public class TracerouteNodeResult extends UNetCommandResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        JSONArray jarr = new JSONArray();
+        if (singleNodeList != null && !singleNodeList.isEmpty()) {
+            for (SingleNodeResult result : singleNodeList) {
+                if (result == null || result.toJson().length() == 0)
+                    continue;
+                
+                jarr.put(result.toJson());
+            }
+        }
+        try {
+            json.put("hop", hop);
+            json.put("routeIp", routeIp);
+            json.put("delay", averageDelay());
+            json.put("loss", lossRate());
+            json.put("isFinalRoute", isFinalRoute);
+            json.put("singleNodeList", jarr);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

@@ -1,7 +1,10 @@
 package com.ucloud.library.netanalysis.module;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -10,9 +13,10 @@ import java.util.List;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class UCAnalysisResult {
-    /** 自定义IP地址或域名列表的分析结果, {@link List<IpReport>} */
-    @SerializedName("IpReports")
+public class UCAnalysisResult implements JsonSerializable {
+    /**
+     * 自定义IP地址或域名列表的分析结果, {@link List<IpReport>}
+     */
     private List<IpReport> ipReports;
     
     public List<IpReport> getIpReports() {
@@ -25,6 +29,25 @@ public class UCAnalysisResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        JSONArray jarr = new JSONArray();
+        if (ipReports != null && !ipReports.isEmpty()) {
+            for (IpReport report : ipReports) {
+                if (report == null || report.toJson().length() == 0)
+                    continue;
+                jarr.put(report.toJson());
+            }
+        }
+        try {
+            json.put("IpReports", jarr);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

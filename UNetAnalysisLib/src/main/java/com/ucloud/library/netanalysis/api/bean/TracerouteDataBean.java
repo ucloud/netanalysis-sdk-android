@@ -1,7 +1,10 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -11,7 +14,6 @@ import java.util.List;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class TracerouteDataBean extends NetDataBean {
-    @SerializedName("route_info")
     private List<RouteInfoBean> routeInfoList;
     
     public List<RouteInfoBean> getRouteInfoList() {
@@ -22,12 +24,9 @@ public class TracerouteDataBean extends NetDataBean {
         this.routeInfoList = routeInfoList;
     }
     
-    public static class RouteInfoBean {
-        @SerializedName("delay")
+    public static class RouteInfoBean implements JsonSerializable {
         private int delay;
-        @SerializedName("route_ip")
         private String routeIp;
-        @SerializedName("loss")
         private int loss;
         
         public int getDelay() {
@@ -45,18 +44,57 @@ public class TracerouteDataBean extends NetDataBean {
         public void setRouteIp(String routeIp) {
             this.routeIp = routeIp;
         }
-    
+        
         public int getLoss() {
             return loss;
         }
-    
+        
         public void setLoss(int loss) {
             this.loss = loss;
         }
-    
+        
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
         }
+        
+        @Override
+        public JSONObject toJson() {
+            JSONObject json = new JSONObject();
+            try {
+                json.put("route_ip", routeIp);
+                json.put("delay", delay);
+                json.put("loss", loss);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json;
+        }
+    }
+    
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        JSONArray jarr = new JSONArray();
+        if (routeInfoList != null && !routeInfoList.isEmpty()) {
+            for (RouteInfoBean bean : routeInfoList) {
+                if (bean == null || bean.toJson().length() == 0)
+                    continue;
+                
+                jarr.put(bean.toJson());
+            }
+        }
+        try {
+            json.put("route_info", jarr);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

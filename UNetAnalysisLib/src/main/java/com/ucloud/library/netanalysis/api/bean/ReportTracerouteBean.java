@@ -1,8 +1,11 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +16,6 @@ import java.util.List;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportTracerouteBean extends UCReportBean {
-    @SerializedName("traceroute_data")
     private ReportTracerouteData tracerouteData;
     
     public ReportTracerouteBean(String appKey, TracerouteDataBean tracerouteData, ReportTracerouteTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
@@ -33,14 +35,10 @@ public class ReportTracerouteBean extends UCReportBean {
             this.tracerouteData = new ReportTracerouteData(tracerouteData.getRouteInfoList());
     }
     
-    public static class ReportTracerouteData {
-        @SerializedName("route_info")
-        private transient List<TracerouteDataBean.RouteInfoBean> routeInfoList;
-        @SerializedName("route_list")
+    public static class ReportTracerouteData implements JsonSerializable {
+        private List<TracerouteDataBean.RouteInfoBean> routeInfoList;
         private List<String> routeList;
-        @SerializedName("delay_list")
         private List<Integer> delayList;
-        @SerializedName("loss_list")
         private List<Integer> lossList;
         
         public ReportTracerouteData(List<TracerouteDataBean.RouteInfoBean> routeInfoList) {
@@ -74,7 +72,51 @@ public class ReportTracerouteBean extends UCReportBean {
         
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
         }
+        
+        @Override
+        public JSONObject toJson() {
+            JSONObject json = new JSONObject();
+            if (routeList == null || routeList.isEmpty()
+                    || delayList == null || delayList.isEmpty()
+                    || lossList == null || lossList.isEmpty())
+                return json;
+            
+            JSONArray arrRoute = new JSONArray();
+            JSONArray arrDelay = new JSONArray();
+            JSONArray arrLoss = new JSONArray();
+            
+            try {
+                for (int i = 0, len = routeList.size(); i < len; i++) {
+                    arrRoute.put(routeList.get(i));
+                    arrDelay.put(delayList.get(i));
+                    arrLoss.put(lossList.get(i));
+                }
+                json.put("route_list", arrRoute);
+                json.put("delay_list", arrDelay);
+                json.put("loss_list", arrLoss);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            
+            return json;
+        }
+    }
+    
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        try {
+            json.put("traceroute_data", tracerouteData == null ? JSONObject.NULL : tracerouteData.toJson());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

@@ -71,18 +71,6 @@
 }
 
 # -------------------------------------------------------------
-# Retrofit2
--keep class * extends retrofit2.Callback {
-    *;
-}
-
-# -------------------------------------------------------------
-# Gson
--keep class com.google.gson.** {
-    *;
-}
-
-# -------------------------------------------------------------
 # Also keep - Enumerations. Keep the special static methods that are required in
 # enumeration classes.
 -keepclassmembers enum * {

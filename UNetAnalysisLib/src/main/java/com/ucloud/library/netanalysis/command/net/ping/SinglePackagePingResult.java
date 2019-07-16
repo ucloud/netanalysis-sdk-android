@@ -1,10 +1,11 @@
 package com.ucloud.library.netanalysis.command.net.ping;
 
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/9/5 18:45.
@@ -12,14 +13,12 @@ import com.ucloud.library.netanalysis.command.net.UNetCommandResult;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class SinglePackagePingResult extends UNetCommandResult {
-    @SerializedName("delay")
-    protected float delaiy;
-    @SerializedName("TTL")
+    protected float delay;
     protected int TTL;
     
     protected SinglePackagePingResult(String targetIp) {
         super(targetIp);
-        delaiy = 0.f;
+        delay = 0.f;
     }
     
     SinglePackagePingResult setStatus(UCommandStatus status) {
@@ -27,12 +26,12 @@ public class SinglePackagePingResult extends UNetCommandResult {
         return this;
     }
     
-    public float getDelaiy() {
-        return delaiy;
+    public float getDelay() {
+        return delay;
     }
     
-    public SinglePackagePingResult setDelaiy(float delaiy) {
-        this.delaiy = delaiy;
+    public SinglePackagePingResult setDelay(float delay) {
+        this.delay = delay;
         return this;
     }
     
@@ -47,6 +46,19 @@ public class SinglePackagePingResult extends UNetCommandResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        try {
+            json.put("delay", delay);
+            json.put("TTL", TTL);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

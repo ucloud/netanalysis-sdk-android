@@ -2,6 +2,7 @@ package com.ucloud.library.netanalysis.command.net.traceroute;
 
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import com.ucloud.library.netanalysis.command.UCommandPerformer;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
@@ -12,9 +13,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * Created by joshua on 2018/9/3 15:58.
@@ -25,9 +23,9 @@ public class Traceroute implements UCommandPerformer {
     protected final String TAG = getClass().getSimpleName();
     private Config config;
     
-    private ExecutorService threadPool;
     private TracerouteCallback callback;
     private boolean isUserStop = false;
+    private TracerouteTask task;
     
     public Traceroute(@NonNull Config config, TracerouteCallback callback) {
         this.config = config == null ? new Config("") : config;
@@ -40,89 +38,61 @@ public class Traceroute implements UCommandPerformer {
     
     @Override
     public void run() {
-        this.threadPool = Executors.newFixedThreadPool(this.config.threadSize);
+        JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
         isUserStop = false;
-        List<TracerouteTask> tasks = new ArrayList<>();
         InetAddress inetAddress = null;
         try {
             inetAddress = config.parseTargetAddress();
         } catch (UnknownHostException e) {
-//            e.printStackTrace();
+            JLog.W(TAG, String.format("traceroute parse %s occur error:%s ", config.targetHost, e.getMessage()));
             if (callback != null)
                 callback.onTracerouteFinish(null, UCommandStatus.CMD_STATUS_ERROR_UNKNOW_HOST);
             return;
         }
         
-        for (int i = 1; i <= config.maxHop; i++)
-            tasks.add(new TracerouteTask(inetAddress, i, config.countPerRoute,
-                    (callback instanceof TracerouteCallback2 ? (TracerouteCallback2) callback : null)));
-        
-        List<Future<TracerouteNodeResult>> futures = null;
+        List<TracerouteNodeResult> nodeResults = new ArrayList<>();
+        int countUnreachable = 0;
         long timestamp = System.currentTimeMillis() / 1000;
-        try {
-            long start = SystemClock.elapsedRealtime();
-            futures = threadPool.invokeAll(tasks);
-            JLog.D(TAG, "[invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
-        } catch (InterruptedException e) {
-//            e.printStackTrace();
-        } finally {
-            stopTask();
-            
-            JLog.I(TAG, "[isUserStop]: " + isUserStop);
-            if (futures == null) {
-                if (callback != null)
-                    callback.onTracerouteFinish(null, UCommandStatus.CMD_STATUS_ERROR);
-                return;
-            }
-    
-            TracerouteResult result = optResult(timestamp, futures);
-            if (callback != null)
-                callback.onTracerouteFinish(result, isUserStop ? UCommandStatus.CMD_STATUS_USER_STOP : UCommandStatus.CMD_STATUS_SUCCESSFUL);
-        }
-    }
-    
-    private TracerouteResult optResult(long timestamp, List<Future<TracerouteNodeResult>> futures) {
-        TracerouteResult result = new TracerouteResult(config.getTargetAddress().getHostAddress(), timestamp);
-        for (int i = 0, len = futures.size(); i < len; i++) {
-            Future<TracerouteNodeResult> future = futures.get(i);
-            if (future == null)
+        long start = SystemClock.elapsedRealtime();
+        for (int i = 1; i <= config.maxHop && !(isUserStop = Thread.currentThread().isInterrupted()); i++) {
+            task = new TracerouteTask(inetAddress, i, config.countPerRoute,
+                    (callback instanceof TracerouteCallback2 ? (TracerouteCallback2) callback : null));
+            TracerouteNodeResult node = task.running();
+            JLog.D(TAG, String.format("[thread]:%d, [trace node]:%s", Thread.currentThread().getId(), node.toString()));
+            if (node == null)
                 continue;
             
-            try {
-                TracerouteNodeResult res = future.get();
-                if (res == null)
-                    continue;
-                
-                result.getTracerouteNodeResults().add(res);
-                if (res.isFinalRoute())
-                    break;
-            } catch (Exception e) {
-//                e.printStackTrace();
-            }
+            nodeResults.add(node);
+            if (node.isFinalRoute())
+                break;
+            
+            if (TextUtils.equals("*", node.getRouteIp()))
+                countUnreachable++;
+            else
+                countUnreachable = 0;
+            
+            if (countUnreachable == 5)
+                break;
         }
+        JLog.D(TAG, "[invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
         
-        return result;
+        TracerouteResult result = new TracerouteResult(config.getTargetAddress().getHostAddress(), timestamp);
+        result.getTracerouteNodeResults().addAll(nodeResults);
+        
+        if (callback != null)
+            callback.onTracerouteFinish(result, isUserStop ? UCommandStatus.CMD_STATUS_USER_STOP : UCommandStatus.CMD_STATUS_SUCCESSFUL);
     }
     
-    private void stopTask() {
-        if (threadPool != null && !threadPool.isShutdown()) {
-            JLog.D(TAG, "shutdown--->" + config.targetHost);
-            threadPool.shutdownNow();
-        }
-    }
     
     @Override
     public void stop() {
         isUserStop = true;
-        stopTask();
+        if (task != null)
+            task.stop();
     }
     
     public Config getConfig() {
         return config;
-    }
-    
-    public boolean isRunning() {
-        return !threadPool.isTerminated();
     }
     
     public static class Config {

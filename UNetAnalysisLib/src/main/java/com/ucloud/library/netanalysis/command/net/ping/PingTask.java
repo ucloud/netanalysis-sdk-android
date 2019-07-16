@@ -42,11 +42,10 @@ final class PingTask extends UNetCommandTask<List<SinglePackagePingResult>> {
     
     @Override
     public List<SinglePackagePingResult> call() throws Exception {
-        resultData = running();
-        return resultData;
+        return running();
     }
     
-    private List<SinglePackagePingResult> running() {
+    protected List<SinglePackagePingResult> running() {
         isRunning = true;
         
         String targetIp = targetAddress == null ? "" : targetAddress.getHostAddress();
@@ -55,23 +54,21 @@ final class PingTask extends UNetCommandTask<List<SinglePackagePingResult>> {
         currentCount = 0;
         SinglePackagePingResult res = null;
         resultData = new ArrayList<>();
-        while (isRunning && (currentCount < count)) {
+        while ((isRunning = !Thread.currentThread().isInterrupted()) && (currentCount < count)) {
             try {
                 res = parseSinglePackageInput(execCommand(command));
+                JLog.D(TAG, String.format("[thread]:%d, [ping](%d):%s", Thread.currentThread().getId(), currentCount, res.toString()));
                 resultData.add(res);
                 if (callback != null)
                     callback.onPing(res);
-            } catch (IOException e) {
-//                e.printStackTrace();
-            } catch (InterruptedException e) {
-//                e.printStackTrace();
+            } catch (IOException | InterruptedException e) {
+                JLog.I(TAG, String.format("ping[%d]: %s occur error: %s", currentCount, command, e.getMessage()));
             } finally {
                 currentCount++;
             }
         }
-        
-        JLog.T(TAG, "[ping " + targetAddress.getHostAddress() + "]:" + (res == null ? "null" : res.toString()));
-        return resultData;
+    
+        return isRunning ? resultData : null;
     }
     
     private SinglePackagePingResult parseSinglePackageInput(String input) {
@@ -79,7 +76,7 @@ final class PingTask extends UNetCommandTask<List<SinglePackagePingResult>> {
         SinglePackagePingResult singleRes = new SinglePackagePingResult(targetAddress.getHostAddress());
         if (TextUtils.isEmpty(input)) {
             singleRes.setStatus(UCommandStatus.CMD_STATUS_NETWORK_ERROR);
-            singleRes.delaiy = 0.f;
+            singleRes.delay = 0.f;
             return singleRes;
         }
         
@@ -87,12 +84,12 @@ final class PingTask extends UNetCommandTask<List<SinglePackagePingResult>> {
         if (matcherTargetId.find()) {
             singleRes.setStatus(UCommandStatus.CMD_STATUS_SUCCESSFUL);
             String time = getPingDelayFromMatcher(matcherTime(input));
-            singleRes.delaiy = Float.parseFloat(time);
+            singleRes.delay = Float.parseFloat(time);
             String ttl = getPingTTLFromMatcher(matcherTTL(input));
             singleRes.TTL = Integer.parseInt(ttl);
         } else {
             singleRes.setStatus(UCommandStatus.CMD_STATUS_FAILED);
-            singleRes.delaiy = 0.f;
+            singleRes.delay = 0.f;
         }
         
         return singleRes;
@@ -105,7 +102,8 @@ final class PingTask extends UNetCommandTask<List<SinglePackagePingResult>> {
     
     @Override
     protected void parseErrorInfo(String error) {
-        JLog.T(TAG, "[icmp_seq]:" + (currentCount + 1) + " [error data]:" + error);
+        if (!TextUtils.isEmpty(error))
+            JLog.T(TAG, "[icmp_seq]:" + (currentCount + 1) + " [error data]:" + error);
         
     }
     

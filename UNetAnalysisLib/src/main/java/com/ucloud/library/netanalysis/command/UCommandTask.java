@@ -35,7 +35,7 @@ public abstract class UCommandTask<T> implements Callable<T> {
     }
     
     protected String execCommand(String command) throws InterruptedException, IOException {
-        JLog.T(TAG, "[command]:" + command);
+        JLog.D(TAG, "[command]:" + command);
         process = createProcess(command);
         int status = process.waitFor();
         JLog.T(TAG, "[status]: " + status);
@@ -52,7 +52,7 @@ public abstract class UCommandTask<T> implements Callable<T> {
         
         try {
             dataStr = readData(dataBufferedStream);
-            errorStr = readData(dataBufferedStream);
+            errorStr = readData(errorBufferedStream);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

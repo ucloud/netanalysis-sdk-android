@@ -1,17 +1,17 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/12 10:41.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class UCApiResponseBean<T> {
-    @SerializedName("meta")
+public class UCApiResponseBean<T extends JsonSerializable> implements JsonSerializable {
     protected MetaBean meta;
-    @SerializedName("data")
     protected T data;
     
     public MetaBean getMeta() {
@@ -30,14 +30,24 @@ public class UCApiResponseBean<T> {
         this.data = data;
     }
     
-    public static class MetaBean {
-        @SerializedName("code")
-        private int code;
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
         
-        @SerializedName("error")
+        try {
+            json.put("meta", meta == null ? JSONObject.NULL : meta.toJson());
+            json.put("data", data == null ? JSONObject.NULL : data.toJson());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
+    }
+    
+    public static class MetaBean implements JsonSerializable {
+        private Integer code;
         private String error;
         
-        public int getCode() {
+        public Integer getCode() {
             return code;
         }
         
@@ -55,12 +65,25 @@ public class UCApiResponseBean<T> {
         
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
+        }
+        
+        @Override
+        public JSONObject toJson() {
+            JSONObject json = new JSONObject();
+            
+            try {
+                json.put("code", code == null ? JSONObject.NULL : code.intValue());
+                json.put("error", error == null ? JSONObject.NULL : error);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json;
         }
     }
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
     }
 }

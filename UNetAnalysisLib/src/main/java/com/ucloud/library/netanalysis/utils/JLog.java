@@ -14,12 +14,12 @@ public class JLog {
     
     private boolean isSaveLog = false;
     
-    public static boolean SHOW_TEST = false;
-    public static boolean SHOW_DEBUG = false;
-    public static boolean SHOW_VERBOSE = true;
-    public static boolean SHOW_INFO = true;
-    public static boolean SHOW_WARN = true;
-    public static boolean SHOW_ERROR = true;
+    static boolean SHOW_TEST = false;
+    static boolean SHOW_DEBUG = false;
+    static boolean SHOW_VERBOSE = true;
+    static boolean SHOW_INFO = true;
+    static boolean SHOW_WARN = true;
+    static boolean SHOW_ERROR = true;
     
     private static final String LOG_POSITION_FORMAT = "[(%s:%s)#%s]: ";
     
@@ -39,7 +39,7 @@ public class JLog {
         return mInstance;
     }
     
-    public static void init(String basePath, int maxSaveDays, boolean isSaveLog) {
+    static void init(String basePath, int maxSaveDays, boolean isSaveLog) {
         getInstance();
         mInstance.isSaveLog = isSaveLog;
         if (isSaveLog) {

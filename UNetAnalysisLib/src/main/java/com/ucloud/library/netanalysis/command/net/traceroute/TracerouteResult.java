@@ -1,8 +1,10 @@
 package com.ucloud.library.netanalysis.command.net.traceroute;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +14,9 @@ import java.util.List;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class TracerouteResult {
-    @SerializedName("targetIp")
+public class TracerouteResult implements JsonSerializable {
     private String targetIp;
-    @SerializedName("tracerouteNodeResults")
     private List<TracerouteNodeResult> tracerouteNodeResults;
-    @SerializedName("timestamp")
     private long timestamp;
     
     public TracerouteResult(String targetIp, long timestamp) {
@@ -40,6 +39,29 @@ public class TracerouteResult {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        JSONArray jarr = new JSONArray();
+        if (tracerouteNodeResults != null && !tracerouteNodeResults.isEmpty()) {
+            for (TracerouteNodeResult result : tracerouteNodeResults) {
+                if (result == null || result.toJson().length() == 0)
+                    continue;
+                
+                jarr.put(result.toJson());
+            }
+        }
+        try {
+            json.put("targetIp", targetIp);
+            json.put("timestamp", timestamp);
+            json.put("tracerouteNodeResults", jarr);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

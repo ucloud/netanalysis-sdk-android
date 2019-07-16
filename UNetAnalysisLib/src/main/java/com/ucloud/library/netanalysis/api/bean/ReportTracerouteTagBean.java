@@ -1,14 +1,11 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.annotations.SerializedName;
-
 /**
  * Created by joshua on 2018/12/27 13:31.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportTracerouteTagBean extends ReportTagBean {
-    @SerializedName("dst_ip")
     private String dstIp;
     
     public ReportTracerouteTagBean(String appId, String dstIp) {

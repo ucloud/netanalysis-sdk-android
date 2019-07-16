@@ -26,6 +26,7 @@ import com.ucloud.library.netanalysis.api.bean.PingDomainResult;
 import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
 import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
+import com.ucloud.library.netanalysis.api.http.Response;
 import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
@@ -36,16 +37,17 @@ import com.ucloud.library.netanalysis.command.net.traceroute.Traceroute;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteCallback;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteNodeResult;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteResult;
+import com.ucloud.library.netanalysis.exception.UCHttpException;
 import com.ucloud.library.netanalysis.module.IpReport;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetStatus;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
+import com.ucloud.library.netanalysis.utils.UCConfig;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.JLog;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,8 +55,6 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
-
-import retrofit2.Response;
 
 /**
  * Created by joshua on 2018/8/29 18:42.
@@ -68,6 +68,7 @@ public class UCNetAnalysisManager {
     public static final int CUSTOM_IP_LIST_SIZE = 5;
     
     private static volatile UCNetAnalysisManager mInstance = null;
+    private UCConfig config;
     private UCApiManager mApiManager;
     private Context mContext;
     
@@ -81,8 +82,8 @@ public class UCNetAnalysisManager {
     
     private IpListBean mIpListCache;
     private List<String> mReportAddr;
-    private List<String> mCustomIps;
-    private IpInfoBean mCurSrcIpInfo = new IpInfoBean();
+    private List<String> mCustomIps, mCustomIpsCache;
+    private IpInfoBean mCurSrcIpInfo;
     private ReentrantLock mCacheLock, mCustomLock;
     
     private String appSecret;
@@ -92,19 +93,22 @@ public class UCNetAnalysisManager {
     private String mDomain;
     private PingDomainResult mDomainResult;
     
-    private UCNetAnalysisManager(Context context, String appKey, String appSecret) {
+    private UCNetAnalysisManager(Context context, String appKey, String appSecret, UCConfig config) {
         this.mContext = context;
         this.appKey = appKey;
         this.appSecret = appSecret;
-        this.mApiManager = new UCApiManager(mContext, appKey, appSecret);
+        this.mApiManager = UCApiManager.create(mContext, appKey, appSecret);
         this.mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         this.mCacheLock = new ReentrantLock();
         this.mCustomLock = new ReentrantLock();
         this.mCustomIps = new ArrayList<>();
+        this.config = config == null ? new UCConfig() : config;
+        this.config.handleConfig();
     }
     
-    public synchronized static UCNetAnalysisManager createManager(@NonNull Context applicationContext, @NonNull String appKey, @NonNull String appSecret) {
-        if (TextUtils.isEmpty(appSecret))
+    public synchronized static UCNetAnalysisManager createManager(@NonNull Context applicationContext,
+                                                                  @NonNull String appKey, @NonNull String appSecret, UCConfig config) {
+        if (TextUtils.isEmpty(appKey))
             throw new IllegalArgumentException("appKey is empty!");
         if (TextUtils.isEmpty(appSecret))
             throw new IllegalArgumentException("appSecret is empty!");
@@ -114,10 +118,15 @@ public class UCNetAnalysisManager {
         
         synchronized (UCNetAnalysisManager.class) {
             destroy();
-            mInstance = new UCNetAnalysisManager(applicationContext, appKey, appSecret);
+            mInstance = new UCNetAnalysisManager(applicationContext, appKey, appSecret, config);
         }
         
         return mInstance;
+    }
+    
+    public synchronized static UCNetAnalysisManager createManager(@NonNull Context applicationContext,
+                                                                  @NonNull String appKey, @NonNull String appSecret) {
+        return createManager(applicationContext, appKey, appSecret, new UCConfig());
     }
     
     public static UCNetAnalysisManager getManager() {
@@ -167,34 +176,36 @@ public class UCNetAnalysisManager {
     }
     
     public void setCustomIps(List<String> ips) {
-        mCustomLock.lock();
-        mCustomIps.clear();
-        if (ips != null && !ips.isEmpty()) {
-            if (ips.size() > CUSTOM_IP_LIST_SIZE) {
-                for (int i = 0; i < CUSTOM_IP_LIST_SIZE; i++)
-                    mCustomIps.add(ips.get(i));
-            } else {
-                mCustomIps.addAll(ips);
+        mCustomIpsCache = ips;
+        new Thread() {
+            @Override
+            public void run() {
+                JLog.T(TAG, "run thread:" + getId() + " name:" + getName());
+                mCustomLock.lock();
+                mCustomIps.clear();
+                if (mCustomIpsCache != null && !mCustomIpsCache.isEmpty()) {
+                    if (mCustomIpsCache.size() > CUSTOM_IP_LIST_SIZE) {
+                        for (int i = 0; i < CUSTOM_IP_LIST_SIZE; i++)
+                            mCustomIps.add(mCustomIpsCache.get(i));
+                    } else {
+                        mCustomIps.addAll(mCustomIpsCache);
+                    }
+                }
+                mCustomLock.unlock();
+                System.gc();
+                
+                if (!isStartMonitorNetStatus)
+                    return;
+                
+                if (mDomainResult == null)
+                    checkDomain();
+                enqueueCustom();
             }
-        }
-        mCustomLock.unlock();
-        System.gc();
-        
-        if (mDomainResult == null)
-            checkDomain();
-        enqueueCustom();
+        }.start();
     }
     
     public List<String> getCustomIps() {
-        List<String> list = null;
-        mCustomLock.lock();
-        if (mCustomIps != null) {
-            list = new ArrayList<>();
-            if (!mCustomIps.isEmpty())
-                list.addAll(mCustomIps);
-        }
-        mCustomLock.unlock();
-        return list;
+        return mCustomIpsCache;
     }
     
     private boolean isCustomAnalysing = false;
@@ -227,9 +238,10 @@ public class UCNetAnalysisManager {
         
         @Override
         public void run() {
+            JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
             mCustomLock.lock();
             if (mCustomIps == null || mCustomIps.isEmpty()) {
-                JLog.E(TAG, "Your custom IP list is empty! Please make sure you have executed 'UCNetAnalysisManager.setCustomIps(List)' first.");
+                JLog.W(TAG, "Your custom IP list is empty! Please make sure you have executed 'UCNetAnalysisManager.setCustomIps(List)' first.");
                 UCAnalysisResult analysisResult = new UCAnalysisResult();
                 analysisResult.setIpReports(reports);
                 if (listener != null)
@@ -247,18 +259,22 @@ public class UCNetAnalysisManager {
             PingCallback pingCallback = new PingCallback() {
                 @Override
                 public void onPingFinish(PingResult result, UCommandStatus status) {
-                    JLog.D(TAG, result == null ? "result = null" : result.toString());
-                    reportCustomIpPing(result, mReportAddr);
+                    JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+                    if (result != null && status == UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                        reportCustomIpPing(result, mReportAddr);
                     
                     IpReport report = new IpReport();
                     if (result != null) {
                         report.setIp(result.getTargetIp());
                         report.setAverageDelay(result.averageDelay());
                         report.setPackageLossRate(result.lossRate());
+                    } else {
+                        report.setIp(status.name());
+                        report.setAverageDelay(-1);
+                        report.setPackageLossRate(-1);
                     }
                     
                     report.setNetStatus(checkNetworkStatus().getNetStatus());
-                    
                     reports.add(report);
                     
                     int count = reports.size();
@@ -452,6 +468,7 @@ public class UCNetAnalysisManager {
                 flag = true;
             }
             
+            mCurSrcIpInfo = null;
             mDomainResult = null;
             mDomain = null;
             
@@ -464,12 +481,11 @@ public class UCNetAnalysisManager {
             mCmdThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
+                    JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
                     doGetPublicIpInfo();
                     synchronized (flag) {
                         flag = false;
                     }
-                    if (mCurSrcIpInfo == null)
-                        return;
                     doGetIpList();
                 }
             });
@@ -487,12 +503,15 @@ public class UCNetAnalysisManager {
             
             mCurSrcIpInfo = response.body().getIpInfo();
             mCurSrcIpInfo.setNetType(checkNetworkStatus().getNetStatus().getValue());
-        } catch (IOException e) {
+        } catch (UCHttpException e) {
             JLog.I(TAG, "apiGetPublicIpInfo error:\n" + e.getMessage());
         }
     }
     
     private void doGetIpList() {
+        if (mCurSrcIpInfo == null)
+            return;
+        
         try {
             Response<UCApiResponseBean<IpListBean>> response = mApiManager.apiGetPingList(mCurSrcIpInfo);
             if (response == null || response.body() == null) {
@@ -530,7 +549,7 @@ public class UCNetAnalysisManager {
             checkDomain();
             enqueueAuto();
             enqueueCustom();
-        } catch (IOException e) {
+        } catch (UCHttpException e) {
             JLog.I(TAG, "apiGetPingList error:\n" + e.getMessage());
         }
     }
@@ -617,7 +636,7 @@ public class UCNetAnalysisManager {
     private PingCallback mDomainPingCallback = new PingCallback() {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
-            JLog.D(TAG, result == null ? "result = null" : result.toString());
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             isCheckingDomain(-1);
             mDomainResult = new PingDomainResult(result, status);
         }
@@ -626,7 +645,7 @@ public class UCNetAnalysisManager {
     private PingCallback mReportPingCallback = new PingCallback() {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
-            JLog.D(TAG, result == null ? "result = null" : result.toString());
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
                 return;
             
@@ -637,7 +656,7 @@ public class UCNetAnalysisManager {
     private PingCallback mReportCustomPingCallback = new PingCallback() {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
-            JLog.D(TAG, result == null ? "result = null" : result.toString());
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
                 return;
             
@@ -681,6 +700,8 @@ public class UCNetAnalysisManager {
         }
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
+            if (mCurSrcIpInfo == null)
+                return;
             try {
                 Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(i), report,
                         pingStatus, isCustomIp, mCurSrcIpInfo, userDefinedData);
@@ -688,7 +709,7 @@ public class UCNetAnalysisManager {
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;
-            } catch (IOException e) {
+            } catch (UCHttpException e) {
                 e.printStackTrace();
             } catch (IndexOutOfBoundsException e) {
                 e.printStackTrace();
@@ -699,7 +720,7 @@ public class UCNetAnalysisManager {
     private TracerouteCallback mReportTracerouteCallback = new TracerouteCallback() {
         @Override
         public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
-            JLog.D(TAG, result == null ? "result = null" : result.toString());
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
                 return;
             
@@ -710,7 +731,7 @@ public class UCNetAnalysisManager {
     private TracerouteCallback mReportCustomTracerouteCallback = new TracerouteCallback() {
         @Override
         public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
-            JLog.D(TAG, result == null ? "result = null" : result.toString());
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
                 return;
             
@@ -748,6 +769,8 @@ public class UCNetAnalysisManager {
         report.setDst_ip(result.getTargetIp());
         
         for (int i = 0, len = reportArrdCache.size(); i < len; i++) {
+            if (mCurSrcIpInfo == null)
+                return;
             try {
                 Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(i), report,
                         isCustomIp, mCurSrcIpInfo, userDefinedData);
@@ -755,7 +778,7 @@ public class UCNetAnalysisManager {
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
                     break;
-            } catch (IOException e) {
+            } catch (UCHttpException e) {
                 e.printStackTrace();
             } catch (IndexOutOfBoundsException e) {
                 e.printStackTrace();

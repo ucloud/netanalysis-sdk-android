@@ -1,7 +1,10 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -10,24 +13,47 @@ import java.util.List;
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class IpListBean {
-    @SerializedName("info")
+public class IpListBean implements JsonSerializable {
     private List<InfoBean> info;
-    @SerializedName("url")
     private List<String> url;
-    @SerializedName("domain")
     private String domain;
     
-    public static class InfoBean {
-        @SerializedName("location")
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        JSONArray arrInfo = new JSONArray();
+        if (info != null && !info.isEmpty()) {
+            for (InfoBean bean : info) {
+                if (bean == null || bean.toJson().length() == 0)
+                    continue;
+                
+                arrInfo.put(bean.toJson());
+            }
+        }
+        JSONArray arrUrl = new JSONArray();
+        if (url != null && !url.isEmpty()) {
+            for (String bean : url) {
+                arrUrl.put(bean);
+            }
+        }
+        try {
+            json.put("domain", domain);
+            json.put("info", arrInfo);
+            json.put("url", arrUrl);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
+    }
+    
+    public static class InfoBean implements JsonSerializable {
+        private Integer id;
         private String location;
-        @SerializedName("ip")
         private String ip;
         /**
          * 0:不traceroute
          * 1：需要traceroute
          */
-        @SerializedName("type")
         private int type;
         
         public String getLocation() {
@@ -58,9 +84,32 @@ public class IpListBean {
             return type == 1;
         }
         
+        public Integer getId() {
+            return id;
+        }
+        
+        public void setId(int id) {
+            this.id = id;
+        }
+        
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
+        }
+        
+        @Override
+        public JSONObject toJson() {
+            JSONObject json = new JSONObject();
+            
+            try {
+                json.put("id", id == null ? JSONObject.NULL : id.intValue());
+                json.put("location", location);
+                json.put("ip", ip);
+                json.put("type", type);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return json;
         }
     }
     
@@ -90,6 +139,6 @@ public class IpListBean {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
     }
 }

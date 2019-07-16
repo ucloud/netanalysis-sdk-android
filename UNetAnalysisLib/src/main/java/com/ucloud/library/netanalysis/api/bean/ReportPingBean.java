@@ -1,8 +1,10 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 16:26.
@@ -10,9 +12,7 @@ import com.ucloud.library.netanalysis.module.UserDefinedData;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class ReportPingBean extends UCReportBean {
-    @SerializedName("ping_data")
     private ReportPingData pingData;
-    @SerializedName("ping_status")
     private int pingStatus;
     
     public ReportPingBean(String appKey, PingDataBean pingData, int pingStatus,
@@ -42,10 +42,8 @@ public class ReportPingBean extends UCReportBean {
         this.pingStatus = pingStatus;
     }
     
-    public static class ReportPingData {
-        @SerializedName("delay")
+    public static class ReportPingData implements JsonSerializable {
         private int delay;
-        @SerializedName("loss")
         private int loss;
         
         public ReportPingData(int delay, int loss) {
@@ -71,7 +69,38 @@ public class ReportPingBean extends UCReportBean {
         
         @Override
         public String toString() {
-            return new Gson().toJson(this);
+            return toJson().toString();
         }
+        
+        @Override
+        public JSONObject toJson() {
+            JSONObject json = new JSONObject();
+            
+            try {
+                json.put("delay", delay);
+                json.put("loss", loss);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            
+            return json;
+        }
+    }
+    
+    @Override
+    public String toString() {
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = super.toJson();
+        try {
+            json.put("ping_data", pingData == null ? JSONObject.NULL : pingData.toJson());
+            json.put("ping_status", pingStatus);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

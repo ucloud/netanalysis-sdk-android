@@ -1,39 +1,28 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/10/17 16:27.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class IpInfoBean {
-    @SerializedName("addr")
+public class IpInfoBean implements JsonSerializable {
     private String ip;
-    @SerializedName("city_name")
     private String cityName;
-    @SerializedName("continent_code")
     private String continentCode;
-    @SerializedName("country_code")
     private String countryCode;
-    @SerializedName("country_name")
     private String countryName;
-    @SerializedName("isp_domain")
     private String ispDomain;
-    @SerializedName("latitude")
     private String latitude;
-    @SerializedName("longitude")
     private String longitude;
-    @SerializedName("owner_domain")
     private String ownerDomain;
-    @SerializedName("region_name")
     private String regionName;
-    @SerializedName("timezone")
     private String timezone;
-    @SerializedName("utc_offset")
     private String utcOffset;
-    @SerializedName("net_type")
     private String netType;
     
     public String getIp() {
@@ -155,7 +144,26 @@ public class IpInfoBean {
     }
     
     @Override
-    public String toString() {
-        return new Gson().toJson(this);
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("addr", ip == null ? JSONObject.NULL : ip);
+            json.put("city_name", cityName == null ? JSONObject.NULL : cityName);
+            json.put("continent_code", continentCode == null ? JSONObject.NULL : continentCode);
+            json.put("country_code", countryCode == null ? JSONObject.NULL : countryCode);
+            json.put("region_name", regionName == null ? JSONObject.NULL : regionName);
+            json.put("country_name", countryName == null ? JSONObject.NULL : countryName);
+            json.put("isp_domain", ispDomain == null ? JSONObject.NULL : ispDomain);
+            json.put("longitude", longitude == null ? JSONObject.NULL : longitude);
+            json.put("latitude", latitude == null ? JSONObject.NULL : latitude);
+            json.put("owner_domain", ownerDomain == null ? JSONObject.NULL : ownerDomain);
+            json.put("timezone", timezone == null ? JSONObject.NULL : timezone);
+            json.put("utc_offset", utcOffset == null ? JSONObject.NULL : utcOffset);
+            json.put("net_type", netType == null ? JSONObject.NULL : netType);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return json;
     }
 }

@@ -1,21 +1,20 @@
 package com.ucloud.library.netanalysis.module;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+
+import com.ucloud.library.netanalysis.parser.JsonSerializable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by joshua on 2018/9/19 15:07.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class IpReport {
-    @SerializedName("IP")
+public class IpReport implements JsonSerializable {
     private String ip;
-    @SerializedName("AverageDelay")
     private int averageDelay;
-    @SerializedName("PackageLossRate")
     private int packageLossRate;
-    @SerializedName("NetStatus")
     private UCNetStatus netStatus;
     
     public String getIp() {
@@ -52,6 +51,20 @@ public class IpReport {
     
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return toJson().toString();
+    }
+    
+    @Override
+    public JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("IP", ip);
+            json.put("AverageDelay", averageDelay);
+            json.put("PackageLossRate", packageLossRate);
+            json.put("NetStatus", netStatus == null ? JSONObject.NULL : netStatus.getValue());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

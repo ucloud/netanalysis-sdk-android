@@ -30,6 +30,7 @@ import javax.crypto.NoSuchPaddingException;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class Encryptor {
+    public static final String TAG = "Encryptor";
     public static final String RSA = "RSA";
     
     /**
@@ -82,14 +83,9 @@ public class Encryptor {
                 res.append(res.length() > 0 ? ("\n" + tmp) : tmp);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            JLog.E(TAG, "filterRsaKey occur error: " + e.getMessage());
         } finally {
-            try {
-                br.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            sr.close();
+            BaseUtil.closeAllCloseable(br, sr);
             
             return res.toString();
         }
