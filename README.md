@@ -25,14 +25,28 @@
 </br>
 
 
-
-### 系统权限设置
+### AndroidManifest配置
 以下是NetAnalysis SDK所需要的Android权限，请确保您的AndroidManifest.xml文件中已经配置了这些权限，否则，SDK将无法正常工作。
-``` xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-```
+
+- 权限
+
+    ``` xml
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    ```
+
+- application
+
+    ``` xml
+    <application
+            ...
+            // 如果targetSdkVersion>= 28,则需要配置usesCleartextTraffic: true
+            android:usesCleartextTraffic="true">
+            ...
+    </application>
+    ```
+
 
 </br>
 
