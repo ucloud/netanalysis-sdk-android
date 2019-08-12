@@ -72,8 +72,8 @@
 
 </br></br>
 
-### 快速接入
-#### 1、初始化SDK模块
+## 快速接入
+### 1、初始化SDK模块
 
 ``` java
 // 使用Application Context 初始化 UmqaClient
@@ -85,7 +85,7 @@ boolean result = UmqaClient.init(getApplicationContext(), appKey, appSecret);
 // result = true : 初始化成功; false : 表示重复初始化，需要先调用UmqaClient.destroy()
 ```
 
-#### 2、配置信息
+### 2、配置信息
 
 ``` java
 // 配置待检测的用户自定义IP
@@ -117,9 +117,9 @@ try {
 }
 ```
 
-#### 3、注册启用SDK，建议在**自定义Application类**或者**主Activity类**的onCreate中调用
+### 3、注册启用SDK，建议在**自定义Application类**或者**主Activity类**的onCreate中调用
 
-##### 注意事项：
+### 注意事项：
 - 若使用默认UCConfig进行register，（即：调用register(OnSdkListener listener)，或者手动声明new UCConfig(LogLevel, **isAutoDetect = true**)）, 表示允许SDK**自动检测**。
 - **自动检测** 会在以下时机进行检测IP：
     - register之后，自动检测UCloud数据中心IP（最近的5个），若有CustomIPs则也会加入检测队列检测
@@ -159,7 +159,7 @@ boolean result = UmqaClient.register(this, config);
 ```
 
 
-#### 4、在你的应用退出时，注销并销毁 UmqaClient
+### 4、在你的应用退出时，注销并销毁 UmqaClient
 
 ``` java
 @Override
@@ -179,6 +179,7 @@ protected void onDestroy(){
 > UmqaClient是UMQA产品移动网络探测SDK部分的主要类，一切本地API都只需要在UmqaClient中操作调用
 
 </br>
+
 #### 初始化UmqaClient
 - 若appKey和appSecret不符合规则，则会抛出**IllegalArgumentException**
 
@@ -192,6 +193,7 @@ public static synchronized boolean init(@NonNull Context applicationContext, @No
 - **return**: 是否init成功，若重复init，则返回false，需要先destroy后重新init
 
 </br>
+
 #### 注册UmqaClient
 
 ``` java
@@ -203,6 +205,7 @@ public synchronized static boolean register(OnSdkListener listener)
 - **return**: 是否register成功，若没有init，则返回false
 
 </br>
+
 #### 注册UmqaClient (带有自定义配置项)
 ``` java
 public synchronized static boolean register(OnSdkListener listener, UCConfig config)
@@ -214,6 +217,7 @@ public synchronized static boolean register(OnSdkListener listener, UCConfig con
 - **return**: 是否register成功，若没有init，则返回false
 
 </br>
+
 #### 设置SDK回调接口
 ``` java
 public synchronized static boolean setSdkListener(OnSdkListener listener)
@@ -224,6 +228,7 @@ public synchronized static boolean setSdkListener(OnSdkListener listener)
 - **return**: 是否设置成功，若没有init，则返回false
 
 </br>
+
 #### 设置自定义的IP列表
 - 最多5个IP，多于5个的，自动取前5个 
 - 不支持填写域名，请填写IP地址
@@ -237,6 +242,7 @@ public synchronized static boolean setCustomIps(List<String> custonIps)
 - **return**: 是否设置成功，若没有init，则返回false
 
 </br>
+
 #### 获取已设置的自定义的IP地址
 ``` java
 public synchronized static List<String> getCustomIps()
@@ -247,6 +253,7 @@ public synchronized static List<String> getCustomIps()
     - List<String>:  已设置的自定义IP列表，**null**: UmqaClient未init
 
 </br>
+
 #### 设置自定义上报字段
 ``` java
 public synchronized static boolean setUserDefinedData(UserDefinedData userDefinedData)
@@ -257,6 +264,7 @@ public synchronized static boolean setUserDefinedData(UserDefinedData userDefine
 - **return**: 是否设置成功，若没有init，则返回false
 
 </br>
+
 #### 手动触发网络检测
 ``` java
 public synchronized static boolean analyse()
@@ -266,6 +274,7 @@ public synchronized static boolean analyse()
 - **return**: 是否触发成功，若没有init或者没有register，则返回false
 
 </br>
+
 #### 检查当前设备网络状态
 ``` java
 public synchronized static UCNetworkInfo checkNetworkStatus()
@@ -276,6 +285,7 @@ public synchronized static UCNetworkInfo checkNetworkStatus()
     - UCNetworkInfo:  当前设备的网络状态，详情见**UCNetworkInfo**，**null** 表示可能UmqaClient未init
 
 </br>
+
 #### 注销UmqaClient模块
 ``` java
 public synchronized static boolean unregister()
@@ -285,6 +295,7 @@ public synchronized static boolean unregister()
 - **return**: 是否unregister成功，若没有init，则返回false
 
 </br>
+
 #### 销毁UmqaClient模块
 ``` java
 public synchronized static void destroy()
@@ -294,6 +305,7 @@ public synchronized static void destroy()
 - **return**: -
 
 </br></br>
+
 ### UCConfig
 > 设置选项
 
@@ -345,6 +357,7 @@ public class UCConfig {
 ```
 
 </br></br>
+
 ### UserDefinedData
 > 用户可选的自定义上报字段
 
@@ -388,6 +401,7 @@ public class UserDefinedData {
 
 
 </br></br>
+
 ### OnSdkListener
 > UmqaClient模块回调接口，**非主线程异步回调**
 
@@ -402,6 +416,7 @@ public interface OnSdkListener {
 ```
 
 </br></br>
+
 ### UCNetworkInfo
 > UNetAnalysisSDK状态集
 
@@ -420,6 +435,7 @@ public class UCNetworkInfo {
 
 
 </br></br>
+
 ### UCSdkStatus
 > UNetAnalysisSDK状态集
 
@@ -450,6 +466,7 @@ public enum UCSdkStatus {
 
 
 </br></br>
+
 ### UCNetStatus
 > 网络状态集
 
@@ -474,6 +491,8 @@ public enum UCNetStatus {
     NET_STATUS_UNKNOW,
 }
 ```
+
+</br></br></br>
 
 ## License
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
