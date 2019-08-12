@@ -7,19 +7,48 @@ package com.ucloud.library.netanalysis.utils;
  */
 public class UCConfig {
     public enum LogLevel {
-        TEST,
+        RELEASE,
         DEBUG,
-        RELEASE
+        TEST
     }
     
     private LogLevel logLevel;
+    private boolean isAutoDetect = true;
     
-    public UCConfig(LogLevel logLevel) {
+    /**
+     * @param logLevel     Log级别，default = {@link UCConfig.LogLevel.RELEASE}
+     * @param isAutoDetect 是否开启自动检测, default = true
+     */
+    public UCConfig(LogLevel logLevel, boolean isAutoDetect) {
         this.logLevel = logLevel;
+        this.isAutoDetect = isAutoDetect;
     }
     
+    /**
+     * 构造方法
+     *
+     * @param isAutoDetect 是否开启自动检测, default = true
+     */
+    public UCConfig(boolean isAutoDetect) {
+        this(LogLevel.RELEASE, isAutoDetect);
+    }
+    
+    /**
+     * 构造方法
+     *
+     * @param logLevel Log级别，default = {@link UCConfig.LogLevel.RELEASE}
+     */
+    public UCConfig(LogLevel logLevel) {
+        this(logLevel, true);
+    }
+    
+    /**
+     * 构造方法
+     * LogLevel = {@link UCConfig.LogLevel.RELEASE}
+     * isAutoDetect = true
+     */
     public UCConfig() {
-        this(LogLevel.RELEASE);
+        this(LogLevel.RELEASE, true);
     }
     
     public void handleConfig() {
@@ -61,5 +90,14 @@ public class UCConfig {
     
     public LogLevel getLogLevel() {
         return logLevel;
+    }
+    
+    public boolean isAutoDetect() {
+        return isAutoDetect;
+    }
+    
+    public UCConfig setAutoDetect(boolean autoDetect) {
+        isAutoDetect = autoDetect;
+        return this;
     }
 }

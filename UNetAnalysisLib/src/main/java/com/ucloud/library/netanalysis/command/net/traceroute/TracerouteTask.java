@@ -24,7 +24,6 @@ final class TracerouteTask extends UNetCommandTask<TracerouteNodeResult> {
     private InetAddress targetAddress;
     private int count;
     private int hop;
-    private int currentCount;
     
     private TracerouteCallback2 callback;
     
@@ -44,29 +43,41 @@ final class TracerouteTask extends UNetCommandTask<TracerouteNodeResult> {
     }
     
     @Override
-    public TracerouteNodeResult call() throws Exception {
-        return running();
-    }
-    
-    protected TracerouteNodeResult running() {
+    protected TracerouteNodeResult run() {
         isRunning = true;
-        
+    
         String targetIp = targetAddress == null ? "" : targetAddress.getHostAddress();
         command = String.format("ping -c 1 -W 1 -t %d %s", hop, targetIp);
-        
-        currentCount = 0;
-        
+    
+        int currentCount = 0;
+    
         List<SingleNodeResult> singleNodeList = new ArrayList<>();
-        while ((isRunning = !Thread.currentThread().isInterrupted()) && (currentCount < count)) {
+        while (isRunning && (currentCount < count)) {
             try {
                 long startTime = SystemClock.elapsedRealtime();
-                SingleNodeResult nodeResult = parseSingleNodeInfoInput(execCommand(command));
-                float delay = (SystemClock.elapsedRealtime() - startTime) / 2.f;
-                JLog.T(TAG, String.format("[thread]:%d, [trace singleNode]:%s", Thread.currentThread().getId(), nodeResult.toString()));
+                String cmdRes = execCommand(command);
+                int delay = (int) (SystemClock.elapsedRealtime() - startTime);
+    
+                /**
+                 * 耗时滤波规则：
+                 * 1、临时性能耗时 = 计算的平均cmd性能耗时
+                 * 2、若：此次的cmd执行耗时 - 计算的平均cmd性能耗时 < 此次耗时的 10%，并且 临时性能耗时 > 计算的平均cmd性能耗时的 10%
+                 *   则：临时性能耗时 自减 20%
+                 * 3、最终延迟 = 此次的cmd执行耗时 - 临时性能耗时
+                 */
+                float tmpElapsed = COMMAND_ELAPSED_TIME;
+                while ((delay - tmpElapsed) < (delay * 0.1) && tmpElapsed > (COMMAND_ELAPSED_TIME * 0.1f))
+                    tmpElapsed *= 0.8;
+    
+                JLog.T(TAG, String.format("[traceroute delay]:%d [COMMAND_ELAPSED_TIME]:%f [tmpElapsed]%f",
+                        delay, COMMAND_ELAPSED_TIME, tmpElapsed));
+                delay -= tmpElapsed;
+    
+                SingleNodeResult nodeResult = parseSingleNodeInfoInput(cmdRes);
                 if (!nodeResult.isFinalRoute()
                         && nodeResult.getStatus() == UCommandStatus.CMD_STATUS_SUCCESSFUL)
                     nodeResult.setDelay(delay);
-                
+    
                 singleNodeList.add(nodeResult);
             } catch (IOException | InterruptedException e) {
                 JLog.I(TAG, String.format("traceroute[%d]: %s occur error: %s", currentCount, command, e.getMessage()));
@@ -74,7 +85,7 @@ final class TracerouteTask extends UNetCommandTask<TracerouteNodeResult> {
                 currentCount++;
             }
         }
-        
+    
         resultData = new TracerouteNodeResult(targetAddress.getHostAddress(), hop, singleNodeList);
         if (callback != null)
             callback.onTracerouteNode(resultData);

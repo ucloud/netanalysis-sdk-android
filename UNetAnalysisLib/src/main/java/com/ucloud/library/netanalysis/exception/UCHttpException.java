@@ -20,8 +20,4 @@ public class UCHttpException extends UCException {
     public UCHttpException(Throwable cause) {
         super(cause);
     }
-    
-    public UCHttpException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }

@@ -13,15 +13,12 @@ public class HexFormatter {
         data &= 0xff;
         int low = data & 0xf;
         int high = (data >> 4) & 0xf;
-        int res = high * 10 + low;
         
-        return res;
+        return high * 10 + low;
     }
     
     public static byte Int2BCD(int data) {
-        byte res = (byte) ((Integer.parseInt(Integer.toString(data), 16)) & 0xff);
-        
-        return res;
+        return (byte) ((Integer.parseInt(Integer.toString(data), 16)) & 0xff);
     }
     
     public static String makeHexRandomString(int byteSize) {
@@ -30,7 +27,7 @@ public class HexFormatter {
         
         Random random = new Random(System.currentTimeMillis());
         
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int times = (int) Math.ceil(byteSize / 4.f);
         
         for (int i = 0; i < times; i++) {
@@ -59,12 +56,18 @@ public class HexFormatter {
         str = str.replace(" ", "");
         int dlt = str.length() - byteLen * 2;
         if (dlt > 0) {
-            str = str.substring(dlt, str.length());
+            str = str.substring(dlt);
         } else if (dlt < 0) {
             dlt = Math.abs(dlt);
-            while (dlt > 0) {
-                str = "0" + str;
-                dlt -= 1;
+            
+            if (dlt > 0) {
+                StringBuilder sb = new StringBuilder();
+                while (dlt > 0) {
+                    sb.append("0");
+                    sb.append(str);
+                    dlt -= 1;
+                }
+                str = sb.toString();
             }
         }
         
@@ -83,7 +86,7 @@ public class HexFormatter {
     public static String formatByteArray2HexString(byte[] data, boolean isUpperCase) {
         if (data == null || data.length == 0)
             return "";
-        
+    
         StringBuffer sb = new StringBuffer();
         for (byte b : data)
             sb.append(String.format("%02x", b));
@@ -94,7 +97,7 @@ public class HexFormatter {
     public static String formatByteArray2HexString(List<Byte> data, boolean isUpperCase) {
         if (data == null || data.isEmpty())
             return "";
-        
+    
         StringBuffer sb = new StringBuffer();
         for (byte b : data)
             sb.append(String.format("%02x", b));

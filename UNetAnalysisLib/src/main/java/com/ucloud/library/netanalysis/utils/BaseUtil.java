@@ -19,7 +19,6 @@ public class BaseUtil {
                     closeable.close();
                 } catch (IOException e) {
                     JLog.E("BaseUtil", "filterRsaKey occur error: " + e.getMessage());
-                    continue;
                 }
         }
     }

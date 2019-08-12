@@ -19,11 +19,7 @@ public class LogFileUtil {
     /**
      * 读写文件的线程池，单线程模型
      */
-    private static ExecutorService sExecutorService;
-    
-    static {
-        sExecutorService = Executors.newSingleThreadExecutor();
-    }
+    private static ExecutorService sExecutorService = Executors.newSingleThreadExecutor();
     
     /**
      * 设置Log存放位置，同时删除超过存放时长的Log
@@ -32,10 +28,11 @@ public class LogFileUtil {
      */
     public static void initBasePath(String basePath, int maxSaveDays) {
         sLogBasePath = basePath;
-        if (!new File(basePath).exists()) {
-            new File(basePath).mkdirs();
+        File baseDir = new File(basePath);
+        if (!baseDir.exists()) {
+            baseDir.mkdirs();
         }
-        delOldFiles(new File(basePath), maxSaveDays);
+        delOldFiles(baseDir, maxSaveDays);
     }
     
     /**
@@ -50,7 +47,7 @@ public class LogFileUtil {
         if (dir.exists()) {
             File[] files = dir.listFiles();
             if (files != null) {
-                for (int i = 0; i < files.length; i++) {
+                for (int i = 0, len = files.length; i < len; i++) {
                     if (files[i].isFile() && System.currentTimeMillis() - files[i].lastModified() > daysMillis) {
                         files[i].delete();
                     }
@@ -120,7 +117,7 @@ public class LogFileUtil {
     public static final String FORMATTER_DAY = "yy_MM_dd";
     public static final String FORMATTER_SECOND = "yy-MM-dd HH:mm:ss";
     
-    public static SimpleDateFormat sSecondFormat = new SimpleDateFormat(FORMATTER_SECOND);
+    public static final SimpleDateFormat sSecondFormat = new SimpleDateFormat(FORMATTER_SECOND);
     
     public static String getFormattedDay() {
         return new SimpleDateFormat(FORMATTER_DAY).format(new Date());

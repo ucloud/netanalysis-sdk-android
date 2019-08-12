@@ -11,7 +11,19 @@ public enum UCSdkStatus {
      */
     REGISTER_SUCCESS,
     /**
-     * appKey或者appSecret无效
+     * 已注册过SDK
      */
-    APPKEY_OR_APPSECRET_ILLEGAL,
+    SDK_HAS_BEEN_REGISTERED,
+    /**
+     * 正在注册SDK中
+     */
+    SDK_IS_REGISTING,
+    /**
+     * SDK获取授权失败
+     */
+    OBTAIN_AUTH_FAILED,
+    /**
+     * SDK被远程关闭
+     */
+    SDK_IS_CLOSED_BY_REMOTE
 }

@@ -18,6 +18,7 @@ public class UCReportBean extends UCApiBaseRequestBean {
     protected String userDefinedStr;
     protected UserDefinedData userDefinedData;
     protected String uuid;
+    protected int trigger;
     
     public UCReportBean(String appKey, String action, ReportTagBean tag, IpInfoBean ipInfo, UserDefinedData userDefinedData) {
         super(appKey);
@@ -26,7 +27,6 @@ public class UCReportBean extends UCApiBaseRequestBean {
         this.ipInfo = ipInfo.makeReportString();
         this.userDefinedData = userDefinedData;
     }
-    
     
     public String getAction() {
         return action;
@@ -90,6 +90,14 @@ public class UCReportBean extends UCApiBaseRequestBean {
         this.uuid = uuid;
     }
     
+    public int getTrigger() {
+        return trigger;
+    }
+    
+    public void setTrigger(int trigger) {
+        this.trigger = trigger;
+    }
+    
     @Override
     public String toString() {
         return toJson().toString();
@@ -105,6 +113,7 @@ public class UCReportBean extends UCApiBaseRequestBean {
             json.put("ip_info", ipInfo);
             json.put("user_defined", userDefinedStr);
             json.put("uuid", uuid);
+            json.put("trigger_type", trigger);
         } catch (JSONException e) {
             e.printStackTrace();
         }

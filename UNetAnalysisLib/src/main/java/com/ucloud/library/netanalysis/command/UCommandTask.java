@@ -1,22 +1,21 @@
 package com.ucloud.library.netanalysis.command;
 
+
 import com.ucloud.library.netanalysis.utils.BaseUtil;
 import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.concurrent.Callable;
 
 /**
  * Created by joshua on 2018/9/4 13:53.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public abstract class UCommandTask<T> implements Callable<T> {
+public abstract class UCommandTask<T> {
     protected final String TAG = getClass().getSimpleName();
     
     protected String command;
@@ -25,8 +24,7 @@ public abstract class UCommandTask<T> implements Callable<T> {
     
     protected InputStream dataInputStream = null;
     protected InputStream errorInputStream = null;
-    protected OutputStream outputStream = null;
-    protected Result originalResult;
+    protected static float COMMAND_ELAPSED_TIME = 0.f;
     
     protected T resultData;
     
@@ -40,8 +38,8 @@ public abstract class UCommandTask<T> implements Callable<T> {
         int status = process.waitFor();
         JLog.T(TAG, "[status]: " + status);
         
-        BufferedInputStream dataBufferedStream = null;
-        BufferedInputStream errorBufferedStream = null;
+        BufferedInputStream dataBufferedStream;
+        BufferedInputStream errorBufferedStream;
         
         dataInputStream = process.getInputStream();
         errorInputStream = process.getErrorStream();
@@ -64,6 +62,10 @@ public abstract class UCommandTask<T> implements Callable<T> {
         return dataStr;
     }
     
+    protected abstract T run();
+    
+    protected abstract void stop();
+    
     protected abstract void parseInputInfo(String input);
     
     protected abstract void parseErrorInfo(String error);
@@ -72,7 +74,7 @@ public abstract class UCommandTask<T> implements Callable<T> {
         if (input == null)
             return null;
         
-        int len = 0;
+        int len;
         byte[] buffer = new byte[1024];
         byte[] cache = null;
         while ((len = input.read(buffer)) > 0) {
@@ -93,32 +95,7 @@ public abstract class UCommandTask<T> implements Callable<T> {
         return new String(cache, Charset.forName("UTF-8"));
     }
     
-    protected abstract void stop();
-    
     public T getResultData() {
         return resultData;
-    }
-    
-    protected static class Result {
-        protected String dataResult;
-        protected String errorResult;
-        
-        protected String getDataResult() {
-            return dataResult;
-        }
-        
-        protected Result setDataResult(String dataResult) {
-            this.dataResult = dataResult;
-            return this;
-        }
-        
-        protected String getErrorResult() {
-            return errorResult;
-        }
-        
-        protected Result setErrorResult(String errorResult) {
-            this.errorResult = errorResult;
-            return this;
-        }
     }
 }

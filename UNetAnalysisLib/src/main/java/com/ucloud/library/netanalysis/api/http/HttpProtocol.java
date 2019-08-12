@@ -9,7 +9,7 @@ public enum HttpProtocol {
     HTTP("http://"),
     HTTPS("https://");
     
-    private String protocol;
+    private final String protocol;
     
     HttpProtocol(String protocol) {
         this.protocol = protocol;

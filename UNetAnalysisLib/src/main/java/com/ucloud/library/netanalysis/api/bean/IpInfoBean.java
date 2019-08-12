@@ -130,7 +130,7 @@ public class IpInfoBean implements JsonSerializable {
     }
     
     protected String makeReportString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(String.format("ip=%s", (ip == null ? "" : ip)));
         sb.append(String.format(",region=%s", (regionName == null ? "" : regionName)));
         sb.append(String.format(",country=%s", (countryName == null ? "" : countryName)));

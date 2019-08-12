@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.api.bean;
 
-import com.ucloud.library.netanalysis.UCNetAnalysisManager;
+import com.ucloud.library.netanalysis.UmqaClient;
 
 import java.util.Locale;
 import java.util.TimeZone;
@@ -13,7 +13,7 @@ import java.util.TimeZone;
 public class ReportTagBean {
     protected String appId;
     protected int platform = 0;
-    protected final String sdkVersion = UCNetAnalysisManager.SDK_VERSION;
+    protected final String sdkVersion = UmqaClient.SDK_VERSION;
     protected int cus = 0;
     protected String timezone;
     
@@ -52,7 +52,7 @@ public class ReportTagBean {
     }
     
     protected String makeReportString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(String.format("app_id=%s", appId));
         sb.append(String.format(",platform=%d", platform));
         sb.append(String.format(",s_ver=%s", sdkVersion));

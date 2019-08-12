@@ -11,7 +11,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -65,15 +64,13 @@ public class UserDefinedData {
                 return new UserDefinedData(jArr);
             
             Set<String> keySet = map.keySet();
-            if (map == null)
+            if (keySet == null)
                 return new UserDefinedData(jArr);
             
-            Iterator<String> iterator = keySet.iterator();
-            while (iterator.hasNext()) {
-                String key = iterator.next();
+            for (String key : keySet) {
                 if (TextUtils.isEmpty(key))
                     continue;
-    
+                
                 JSONObject json = new JSONObject();
                 try {
                     json.put(KEY_USER_DEFINED_PARAM, key);
@@ -90,11 +87,16 @@ public class UserDefinedData {
             String res = jArr.toString();
             int len = res.length();
             if (len > LIMIT_LEN_USER_DEFINED_DATA)
-                throw new UCParamVerifyException(String.format("The json string length of user defined map is %d, the limit length is %d. \nJson String is: %s", len, LIMIT_LEN_USER_DEFINED_DATA, res));
+                throw new UCParamVerifyException(String.format("The json string length of user defined map is %d, " +
+                        "the limit length is %d. \nJson String is: %s", len, LIMIT_LEN_USER_DEFINED_DATA, res));
             
             return new UserDefinedData(jArr);
         }
         
+    }
+    
+    public UserDefinedData copy() {
+        return new UserDefinedData(data);
     }
     
     public static class UserDefinedParam implements Serializable, JsonSerializable {
@@ -120,7 +122,7 @@ public class UserDefinedData {
         }
         
         public UserDefinedParam setValue(String value) {
-            this.value = value == null ? "" : value;
+            this.value = value;
             return this;
         }
         

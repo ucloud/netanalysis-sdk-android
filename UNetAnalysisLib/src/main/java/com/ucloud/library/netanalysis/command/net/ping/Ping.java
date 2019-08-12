@@ -10,11 +10,7 @@ import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created by joshua on 2018/9/3 15:58.
@@ -29,7 +25,7 @@ public class Ping implements UCommandPerformer {
     private boolean isUserStop = false;
     private PingTask task;
     
-    public Ping(@NonNull Config config, PingCallback callback) {
+    public Ping(Config config, PingCallback callback) {
         this.config = config == null ? new Config("") : config;
         this.callback = callback;
     }
@@ -42,7 +38,7 @@ public class Ping implements UCommandPerformer {
     public void run() {
         JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
         isUserStop = false;
-        InetAddress inetAddress = null;
+        InetAddress inetAddress;
         try {
             inetAddress = config.parseTargetAddress();
         } catch (UnknownHostException e) {
@@ -56,12 +52,12 @@ public class Ping implements UCommandPerformer {
         long start = SystemClock.elapsedRealtime();
         task = new PingTask(inetAddress, config.countPerRoute,
                 (callback instanceof PingCallback2 ? (PingCallback2) callback : null));
-        List<SinglePackagePingResult> results = task.running();
+        List<SinglePackagePingResult> results = task.run();
         JLog.D(TAG, "[command invoke time]:" + (SystemClock.elapsedRealtime() - start) + " ms");
         
         if (results == null) {
             if (callback != null)
-                callback.onPingFinish(null, UCommandStatus.CMD_STATUS_ERROR);
+                callback.onPingFinish(null, UCommandStatus.CMD_STATUS_USER_STOP);
             return;
         }
         

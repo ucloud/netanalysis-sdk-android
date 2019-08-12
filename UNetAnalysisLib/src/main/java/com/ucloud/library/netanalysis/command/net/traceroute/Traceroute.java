@@ -27,7 +27,7 @@ public class Traceroute implements UCommandPerformer {
     private boolean isUserStop = false;
     private TracerouteTask task;
     
-    public Traceroute(@NonNull Config config, TracerouteCallback callback) {
+    public Traceroute(Config config, TracerouteCallback callback) {
         this.config = config == null ? new Config("") : config;
         this.callback = callback;
     }
@@ -40,7 +40,7 @@ public class Traceroute implements UCommandPerformer {
     public void run() {
         JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
         isUserStop = false;
-        InetAddress inetAddress = null;
+        InetAddress inetAddress;
         try {
             inetAddress = config.parseTargetAddress();
         } catch (UnknownHostException e) {
@@ -54,11 +54,12 @@ public class Traceroute implements UCommandPerformer {
         int countUnreachable = 0;
         long timestamp = System.currentTimeMillis() / 1000;
         long start = SystemClock.elapsedRealtime();
-        for (int i = 1; i <= config.maxHop && !(isUserStop = Thread.currentThread().isInterrupted()); i++) {
+        for (int i = 1; i <= config.maxHop && !isUserStop; i++) {
             task = new TracerouteTask(inetAddress, i, config.countPerRoute,
                     (callback instanceof TracerouteCallback2 ? (TracerouteCallback2) callback : null));
-            TracerouteNodeResult node = task.running();
-            JLog.D(TAG, String.format("[thread]:%d, [trace node]:%s", Thread.currentThread().getId(), node.toString()));
+            TracerouteNodeResult node = task.run();
+            JLog.D(TAG, String.format("[thread]:%d, [trace node]:%s", Thread.currentThread().getId(),
+                    (node == null ? "null" : node.toString())));
             if (node == null)
                 continue;
             
@@ -100,13 +101,11 @@ public class Traceroute implements UCommandPerformer {
         private String targetHost;
         private int maxHop;
         private int countPerRoute;
-        private int threadSize;
         
         public Config(@NonNull String targetHost) {
             this.targetHost = targetHost;
             this.maxHop = 32;
             this.countPerRoute = 3;
-            this.threadSize = 3;
         }
         
         InetAddress getTargetAddress() {
@@ -142,15 +141,6 @@ public class Traceroute implements UCommandPerformer {
         
         public Config setCountPerRoute(int countPerRoute) {
             this.countPerRoute = Math.max(1, Math.min(countPerRoute, 3));
-            return this;
-        }
-        
-        public int getThreadSize() {
-            return threadSize;
-        }
-        
-        public Config setThreadSize(int threadSize) {
-            this.threadSize = Math.max(1, Math.min(threadSize, 3));
             return this;
         }
     }

@@ -1,5 +1,6 @@
 package com.ucloud.library.netanalysis.api.http;
 
+import android.net.TrafficStats;
 import android.os.SystemClock;
 import android.text.TextUtils;
 
@@ -25,11 +26,6 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -47,27 +43,12 @@ import javax.net.ssl.X509TrustManager;
 public class UCHttpClient {
     protected final String TAG = getClass().getSimpleName();
     
+    private static final int THREAD_ID = 10000;
     public static final int DEFAULT_CONNECT_TIMEOUT = 20 * 1000;
     public static final int DEFAULT_READ_TIMEOUT = 20 * 1000;
-
-//    protected final String threadPoolName = "UCHttpClient Dispatcher";
-//    protected final boolean daemon = false;
-//    protected ExecutorService threadPool;
     
     protected int timeoutConnect = DEFAULT_CONNECT_TIMEOUT;
     protected int timeoutRead = DEFAULT_READ_TIMEOUT;
-    
-    public UCHttpClient() {
-//        threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60, TimeUnit.SECONDS,
-//                new SynchronousQueue<Runnable>(), new ThreadFactory() {
-//            @Override
-//            public Thread newThread(Runnable runnable) {
-//                Thread result = new Thread(runnable, threadPoolName);
-//                result.setDaemon(daemon);
-//                return result;
-//            }
-//        });
-    }
     
     public void setTimeoutConnect(int timeoutConnect) {
         this.timeoutConnect = Math.max(60 * 1000, Math.min(1000, timeoutConnect));
@@ -80,7 +61,7 @@ public class UCHttpClient {
     public <T> Response<T> execute(Request request, JsonDeserializer<T> deserializer) throws UCHttpException {
         if (request == null)
             throw new UCHttpException("request can not be null");
-        HttpURLConnection connection = null;
+        HttpURLConnection connection;
         try {
             connection = (HttpURLConnection) request.url().openConnection();
             connection.setConnectTimeout(timeoutConnect);
@@ -116,14 +97,18 @@ public class UCHttpClient {
         JLog.D(TAG, String.format("[URL]: %s://%s%s%s%s", url.getProtocol(), url.getHost(), port, path, query));
         
         Map<String, String> headers = request.headers();
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            connection.setRequestProperty(entry.getKey(), entry.getValue());
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                connection.setRequestProperty(entry.getKey(), entry.getValue());
+            }
         }
         
         Map<String, List<String>> map = connection.getRequestProperties();
         for (Map.Entry<String, List<String>> entry : map.entrySet()) {
-            JLog.D(TAG, "[request-header]: " + entry.getKey() + " = " + entry.getValue());
+            JLog.T(TAG, "[request-header]: " + entry.getKey() + " = " + entry.getValue());
         }
+    
+        TrafficStats.setThreadStatsTag(THREAD_ID);
         
         if (request.method().equals(HttpMethod.POST)
                 || request.method().equals(HttpMethod.PUT)) {
@@ -145,7 +130,7 @@ public class UCHttpClient {
         // 获取response-header map
         response.setHeaders(connection.getHeaderFields());
         for (Map.Entry<String, List<String>> entry : response.headers().entrySet()) {
-            JLog.D(TAG, "[response-header]: " + entry.getKey() + " = " + entry.getValue());
+            JLog.T(TAG, "[response-header]: " + entry.getKey() + " = " + entry.getValue());
         }
         
         // 读取ContentLength，若没有该字段，赋值 -1
@@ -176,12 +161,12 @@ public class UCHttpClient {
         if (code == 201 || (code >= 300 && code < 400)) {
             // 当code = 3xx时，重定向操作
             String location = connection.getHeaderField("Location");
-            JLog.D(TAG, "[Redirect]:" + location);
+            JLog.T(TAG, "[Redirect]:" + location);
             connection.disconnect();
             if (TextUtils.isEmpty(location))
-                throw new UCHttpException(String.format("response-code = %d redirection, but there is no Location param in response-header"));
-            
-            Request.RequestBuilder builder = null;
+                throw new UCHttpException(String.format("response-code = %d redirection, but there is no Location param in response-header", code));
+    
+            Request.RequestBuilder builder;
             try {
                 URL newUrl = new URL(location);
                 builder = request.newBuilder().url(newUrl);
@@ -214,7 +199,7 @@ public class UCHttpClient {
         int bufferSize = Math.max(1, (int) Math.min(contentLength, DEFAULT_BUFFER_SIZE));
         byte[] buffer = null;
         byte[] cache = new byte[bufferSize];
-        int len = 0;
+        int len;
         while ((len = is.read(cache)) > 0) {
             if (buffer == null) {
                 buffer = Arrays.copyOf(cache, len);

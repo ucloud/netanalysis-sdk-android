@@ -7,7 +7,7 @@ package com.ucloud.library.netanalysis.api.bean;
  */
 public class ReportPingTagBean extends ReportTagBean {
     private String dstIp;
-    private int TTL = 0;
+    private int TTL;
     
     public ReportPingTagBean(String appId, String dstIp, int TTL) {
         super(appId);
@@ -32,7 +32,7 @@ public class ReportPingTagBean extends ReportTagBean {
     }
     
     protected String makeReportString() {
-        StringBuffer sb = new StringBuffer(super.makeReportString());
+        StringBuilder sb = new StringBuilder(super.makeReportString());
         sb.append(String.format(",dst_ip=%s", (dstIp == null ? "" : dstIp)));
         sb.append(String.format(",TTL=%d", TTL));
         return sb.toString();

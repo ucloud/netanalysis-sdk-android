@@ -3,7 +3,7 @@ package com.ucloud.library.netanalysis.api.http;
 import android.support.v4.util.ArrayMap;
 import android.text.TextUtils;
 
-import com.ucloud.library.netanalysis.UCNetAnalysisManager;
+import com.ucloud.library.netanalysis.UmqaClient;
 import com.ucloud.library.netanalysis.exception.UCHttpException;
 import com.ucloud.library.netanalysis.parser.JsonSerializable;
 
@@ -203,9 +203,11 @@ public class Request<T> {
                             continue;
                         
                         if (!TextUtils.isEmpty(keep)) {
-                            sb.append(urlEncode(part, keep, null) + separator);
+                            sb.append(urlEncode(part, keep, null));
+                            sb.append(separator);
                         } else {
-                            sb.append(URLEncoder.encode(part, "UTF-8") + separator);
+                            sb.append(URLEncoder.encode(part, "UTF-8"));
+                            sb.append(separator);
                         }
                     }
                     
@@ -279,7 +281,7 @@ public class Request<T> {
             
             if (headers == null)
                 headers = new ArrayMap<>();
-            headers.put("User-Agent", TextUtils.isEmpty(userAgent) ? UCNetAnalysisManager.SDK_VERSION : userAgent);
+            headers.put("User-Agent", TextUtils.isEmpty(userAgent) ? UmqaClient.SDK_VERSION : userAgent);
             headers.put("Content-Type", TextUtils.isEmpty(contentType) ? "application/json;charset=utf-8" : contentType);
             
             request.headers = headers;

@@ -104,6 +104,8 @@ public class PingResult implements JsonSerializable {
         try {
             json.put("targetIp", targetIp);
             json.put("timestamp", timestamp);
+            json.put("avgDelay", averageDelay());
+            json.put("loss", lossRate());
             json.put("pingPackages", jarr);
         } catch (JSONException e) {
             e.printStackTrace();

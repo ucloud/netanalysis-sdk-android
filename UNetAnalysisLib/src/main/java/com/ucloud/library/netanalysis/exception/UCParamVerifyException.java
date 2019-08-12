@@ -20,8 +20,4 @@ public class UCParamVerifyException extends UCException {
     public UCParamVerifyException(Throwable cause) {
         super(cause);
     }
-    
-    public UCParamVerifyException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }

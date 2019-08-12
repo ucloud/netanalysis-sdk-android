@@ -4,7 +4,6 @@ package com.ucloud.library.netanalysis.command.net;
 import android.text.TextUtils;
 
 import com.ucloud.library.netanalysis.command.UCommandTask;
-import com.ucloud.library.netanalysis.utils.JLog;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
