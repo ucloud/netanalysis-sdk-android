@@ -24,11 +24,13 @@ import com.ucloud.library.netanalysis.api.bean.MessageBean;
 import com.ucloud.library.netanalysis.api.bean.PingDataBean;
 import com.ucloud.library.netanalysis.api.bean.PingDomainResult;
 import com.ucloud.library.netanalysis.api.bean.PublicIpBean;
+import com.ucloud.library.netanalysis.api.bean.SdkStatus;
 import com.ucloud.library.netanalysis.api.bean.TracerouteDataBean;
 import com.ucloud.library.netanalysis.api.bean.UCApiResponseBean;
 import com.ucloud.library.netanalysis.api.http.Response;
-import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
+import com.ucloud.library.netanalysis.command.UCommandPerformer;
+import com.ucloud.library.netanalysis.command.UCommandRunner;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;
 import com.ucloud.library.netanalysis.command.net.ping.Ping;
 import com.ucloud.library.netanalysis.command.net.ping.PingCallback;
@@ -38,9 +40,7 @@ import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteCallback;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteNodeResult;
 import com.ucloud.library.netanalysis.command.net.traceroute.TracerouteResult;
 import com.ucloud.library.netanalysis.exception.UCHttpException;
-import com.ucloud.library.netanalysis.module.IpReport;
 import com.ucloud.library.netanalysis.module.UserDefinedData;
-import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetStatus;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
@@ -48,66 +48,45 @@ import com.ucloud.library.netanalysis.utils.UCConfig;
 import com.ucloud.library.netanalysis.utils.Encryptor;
 import com.ucloud.library.netanalysis.utils.JLog;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by joshua on 2018/8/29 18:42.
  * Company: UCloud
  * E-mail: joshua.yin@ucloud.cn
  */
-public class UCNetAnalysisManager {
+class UCNetAnalysisManager {
     private final String TAG = getClass().getSimpleName();
     
-    public static final String SDK_VERSION = String.format("Android/%s", BuildConfig.VERSION_NAME);
-    public static final int CUSTOM_IP_LIST_SIZE = 5;
-    
-    private static volatile UCNetAnalysisManager mInstance = null;
-    private UCConfig config;
     private UCApiManager mApiManager;
     private Context mContext;
     
-    private ExecutorService mCmdThreadPool;
     private UNetStatusReceiver mNetStatusReceiver;
-    private boolean isStartMonitorNetStatus = false;
+    private Boolean isRegisted = false;
     private TelephonyManager mTelephonyManager;
     private SignalStrength mMobileSignalStrength;
     
     private OnSdkListener mSdkListener;
     
-    private IpListBean mIpListCache;
+    private List<IpListBean.InfoBean> mUcloudIps;
     private List<String> mReportAddr;
-    private List<String> mCustomIps, mCustomIpsCache;
+    private List<String> mCustomIps;
     private IpInfoBean mCurSrcIpInfo;
-    private ReentrantLock mCacheLock, mCustomLock;
     
-    private String appSecret;
-    private String appKey;
     private UserDefinedData userDefinedData;
+    private UCConfig config;
     
     private String mDomain;
     private PingDomainResult mDomainResult;
+    private UCommandRunner mCommandRunner;
     
-    private UCNetAnalysisManager(Context context, String appKey, String appSecret, UCConfig config) {
-        this.mContext = context;
-        this.appKey = appKey;
-        this.appSecret = appSecret;
-        this.mApiManager = UCApiManager.create(mContext, appKey, appSecret);
-        this.mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
-        this.mCacheLock = new ReentrantLock();
-        this.mCustomLock = new ReentrantLock();
-        this.mCustomIps = new ArrayList<>();
-        this.config = config == null ? new UCConfig() : config;
-        this.config.handleConfig();
-    }
-    
-    public synchronized static UCNetAnalysisManager createManager(@NonNull Context applicationContext,
-                                                                  @NonNull String appKey, @NonNull String appSecret, UCConfig config) {
+    UCNetAnalysisManager(@NonNull Context applicationContext,
+                         @NonNull String appKey, @NonNull String appSecret) {
         if (TextUtils.isEmpty(appKey))
             throw new IllegalArgumentException("appKey is empty!");
         if (TextUtils.isEmpty(appSecret))
@@ -116,197 +95,233 @@ public class UCNetAnalysisManager {
         if (TextUtils.isEmpty(appSecret))
             throw new IllegalArgumentException("appSecret is illegal!");
         
-        synchronized (UCNetAnalysisManager.class) {
-            destroy();
-            mInstance = new UCNetAnalysisManager(applicationContext, appKey, appSecret, config);
+        try {
+            this.mContext = applicationContext;
+            this.mApiManager = new UCApiManager(applicationContext, appKey, Encryptor.getPublicKey(appSecret));
+            this.mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
+            this.mCustomIps = new ArrayList<>();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new IllegalArgumentException("appSecret is invalid!", e);
         }
+    }
+    
+    synchronized void destroy() {
+        destroyObj();
+        mCommandRunner = null;
+    }
+    
+    private synchronized void destroyObj() {
+        if (mCommandRunner != null)
+            mCommandRunner.shutdownNow();
         
-        return mInstance;
-    }
-    
-    public synchronized static UCNetAnalysisManager createManager(@NonNull Context applicationContext,
-                                                                  @NonNull String appKey, @NonNull String appSecret) {
-        return createManager(applicationContext, appKey, appSecret, new UCConfig());
-    }
-    
-    public static UCNetAnalysisManager getManager() {
-        return mInstance;
-    }
-    
-    public static void destroy() {
-        if (mInstance != null) {
-            mInstance.destroyObj();
-        }
-        
-        mInstance = null;
-    }
-    
-    private void destroyObj() {
-        if (mCmdThreadPool != null && !mCmdThreadPool.isShutdown())
-            mCmdThreadPool.shutdownNow();
-        
-        clearIpList();
-        stopMonitorNetStatus();
+        clearCache();
         System.gc();
     }
     
-    public void setSdkListener(OnSdkListener listener) {
+    synchronized void setSdkListener(OnSdkListener listener) {
         mSdkListener = listener;
     }
     
-    public void register(OnSdkListener listener) {
-        register(listener, null);
+    synchronized void register(@NonNull OnSdkListener listener) {
+        register(listener, new UCConfig());
     }
     
-    public void register(OnSdkListener listener, UserDefinedData userDefinedData) {
+    synchronized void register(@NonNull OnSdkListener listener, @NonNull UCConfig config) {
         setSdkListener(listener);
         
-        if (TextUtils.isEmpty(appKey) || TextUtils.isEmpty(appSecret)) {
-            if (mSdkListener != null)
-                mSdkListener.onRegister(UCSdkStatus.APPKEY_OR_APPSECRET_ILLEGAL);
-            
-            return;
-        }
-        
-        this.userDefinedData = userDefinedData;
-        
-        startMonitorNetStatus();
-        if (mSdkListener != null)
-            mSdkListener.onRegister(UCSdkStatus.REGISTER_SUCCESS);
-    }
-    
-    public void setCustomIps(List<String> ips) {
-        mCustomIpsCache = ips;
-        new Thread() {
-            @Override
-            public void run() {
-                JLog.T(TAG, "run thread:" + getId() + " name:" + getName());
-                mCustomLock.lock();
-                mCustomIps.clear();
-                if (mCustomIpsCache != null && !mCustomIpsCache.isEmpty()) {
-                    if (mCustomIpsCache.size() > CUSTOM_IP_LIST_SIZE) {
-                        for (int i = 0; i < CUSTOM_IP_LIST_SIZE; i++)
-                            mCustomIps.add(mCustomIpsCache.get(i));
-                    } else {
-                        mCustomIps.addAll(mCustomIpsCache);
-                    }
-                }
-                mCustomLock.unlock();
-                System.gc();
-                
-                if (!isStartMonitorNetStatus)
-                    return;
-                
-                if (mDomainResult == null)
-                    checkDomain();
-                enqueueCustom();
+        synchronized (isRegisted) {
+            // 判断是否已注册过
+            if (isRegisted) {
+                if (this.mSdkListener != null)
+                    this.mSdkListener.onRegister(UCSdkStatus.SDK_HAS_BEEN_REGISTERED);
+                return;
             }
-        }.start();
-    }
-    
-    public List<String> getCustomIps() {
-        return mCustomIpsCache;
-    }
-    
-    private boolean isCustomAnalysing = false;
-    
-    private OnAnalyseListener mCustomAnalyseListener = null;
-    
-    public void analyse(OnAnalyseListener listener) {
-        if (isCustomAnalysing)
-            return;
-        
-        isCustomAnalysing = true;
-        mCustomAnalyseListener = listener;
-        // 如果手动检测触发，则强制关闭自动检测
-        if (mCmdThreadPool != null)
-            mCmdThreadPool.shutdownNow();
-        
-        System.gc();
-        mCmdThreadPool = Executors.newSingleThreadExecutor();
-        mCmdThreadPool.execute(new CustomAnalyseRunner(mCustomAnalyseListener));
-    }
-    
-    private class CustomAnalyseRunner implements Runnable {
-        private OnAnalyseListener listener;
-        private List<IpReport> reports;
-        
-        public CustomAnalyseRunner(OnAnalyseListener listener) {
-            this.listener = listener;
-            reports = new ArrayList<>();
         }
         
-        @Override
-        public void run() {
-            JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
-            mCustomLock.lock();
-            if (mCustomIps == null || mCustomIps.isEmpty()) {
-                JLog.W(TAG, "Your custom IP list is empty! Please make sure you have executed 'UCNetAnalysisManager.setCustomIps(List)' first.");
-                UCAnalysisResult analysisResult = new UCAnalysisResult();
-                analysisResult.setIpReports(reports);
-                if (listener != null)
-                    listener.onAnalysed(analysisResult);
-                mCustomLock.unlock();
+        synchronized (isRegisting) {
+            if (isRegisting) {
+                if (this.mSdkListener != null)
+                    this.mSdkListener.onRegister(UCSdkStatus.SDK_IS_REGISTING);
                 return;
             }
             
-            List<String> customIps = new ArrayList<>();
-            customIps.addAll(mCustomIps);
-            mCustomLock.unlock();
-            
-            final int size = customIps.size();
-            
-            PingCallback pingCallback = new PingCallback() {
-                @Override
-                public void onPingFinish(PingResult result, UCommandStatus status) {
-                    JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
-                    if (result != null && status == UCommandStatus.CMD_STATUS_SUCCESSFUL)
-                        reportCustomIpPing(result, mReportAddr);
-                    
-                    IpReport report = new IpReport();
-                    if (result != null) {
-                        report.setIp(result.getTargetIp());
-                        report.setAverageDelay(result.averageDelay());
-                        report.setPackageLossRate(result.lossRate());
-                    } else {
-                        report.setIp(status.name());
-                        report.setAverageDelay(-1);
-                        report.setPackageLossRate(-1);
-                    }
-                    
-                    report.setNetStatus(checkNetworkStatus().getNetStatus());
-                    reports.add(report);
-                    
-                    int count = reports.size();
-                    if (count == size) {
-                        UCAnalysisResult analysisResult = new UCAnalysisResult();
-                        analysisResult.setIpReports(reports);
-                        if (listener != null)
-                            listener.onAnalysed(analysisResult);
+            isRegisting = true;
+        }
+        
+        // 执行配置选项
+        this.config = config == null ? new UCConfig() : config;
+        this.config.handleConfig();
+        
+        if (mCommandRunner != null)
+            mCommandRunner.shutdownNow();
+        mCommandRunner = new UCommandRunner();
+        mCommandRunner.start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                {
+                    try {
+                        Response<UCApiResponseBean<SdkStatus>> response = mApiManager.apiGetSdkStatus();
+                        if (response == null || response.body() == null) {
+                            synchronized (isRegisting) {
+                                isRegisting = false;
+                            }
+                            if (mSdkListener != null)
+                                mSdkListener.onRegister(UCSdkStatus.OBTAIN_AUTH_FAILED);
+                            return;
+                        }
+                        UCApiResponseBean<SdkStatus> body = response.body();
+                        if (body.getData() == null) {
+                            synchronized (isRegisting) {
+                                isRegisting = false;
+                            }
+                            if (mSdkListener != null)
+                                mSdkListener.onRegister(UCSdkStatus.OBTAIN_AUTH_FAILED);
+                            return;
+                        }
                         
-                        isCustomAnalysing = false;
+                        if (body.getData().getEnabled() == 1) {
+                            startMonitorNetStatus();
+                            
+                            synchronized (isRegisting) {
+                                isRegisting = false;
+                            }
+                            
+                            synchronized (isRegisted) {
+                                isRegisted = true;
+                            }
+                            
+                            if (mSdkListener != null)
+                                mSdkListener.onRegister(UCSdkStatus.REGISTER_SUCCESS);
+                        } else {
+                            synchronized (isRegisting) {
+                                isRegisting = false;
+                            }
+                            if (mSdkListener != null)
+                                mSdkListener.onRegister(UCSdkStatus.SDK_IS_CLOSED_BY_REMOTE);
+                            return;
+                        }
+                    } catch (UCHttpException e) {
+                        JLog.W(TAG, "obtain auth failed: " + e.getMessage());
+                        synchronized (isRegisting) {
+                            isRegisting = false;
+                        }
+                        if (mSdkListener != null)
+                            mSdkListener.onRegister(UCSdkStatus.OBTAIN_AUTH_FAILED);
                     }
                 }
-            };
-            
-            checkDomain();
-            
-            for (String ip : customIps)
-                ping(new Ping(new Ping.Config(ip, 5), pingCallback));
-            
-            if (mReportAddr != null && !mReportAddr.isEmpty())
-                for (String ip : customIps)
-                    traceroute(new Traceroute(new Traceroute.Config(ip).setThreadSize(3),
-                            mReportCustomTracerouteCallback));
-            
+            }
+        }).start();
+    }
+    
+    private Boolean isRegisting = false;
+    
+    synchronized void unregister() {
+        synchronized (isRegisted) {
+            stopMonitorNetStatus();
+            destroyObj();
+            isRegisted = false;
         }
     }
     
-    public void unregister() {
-        destroyObj();
+    synchronized void setCustomIps(List<String> ips) {
+        List<String> cache = ips == null ? new ArrayList<String>() : new ArrayList<>(ips.subList(0, Math.min(UmqaClient.CUSTOM_IP_LIST_SIZE, ips.size())));
+        
+        Collections.sort(cache);
+        boolean isSame = mCustomIps.size() == cache.size();
+        if (isSame) {
+            for (int i = 0, len = cache.size(); isSame && i < len; i++) {
+                if (!(isSame = TextUtils.equals(mCustomIps.get(i), cache.get(i))))
+                    break;
+            }
+        }
+        
+        System.gc();
+        
+        if (isSame) {
+            JLog.I(TAG, "These are same to current custom IPs");
+            return;
+        }
+        
+        mCustomIps = cache;
+        
+        if (mCustomIps.isEmpty())
+            return;
+        
+        synchronized (isRegisted) {
+            if (!isRegisted)
+                return;
+        }
+        
+        if (config.isAutoDetect()) {
+            if (mDomainResult == null)
+                checkDomain();
+            detectCustomIP(false);
+        }
     }
     
-    public UCNetworkInfo checkNetworkStatus() {
+    synchronized void setUserDefinedData(UserDefinedData userDefinedData) {
+        this.userDefinedData = userDefinedData == null ? null : userDefinedData.copy();
+    }
+    
+    synchronized List<String> getCustomIps() {
+        return new ArrayList<>(mCustomIps);
+    }
+    
+    
+    synchronized boolean analyse() {
+        // 如果没有register则无法进行检测
+        synchronized (isRegisted) {
+            if (!isRegisted)
+                return false;
+        }
+        
+        if (mCommandRunner != null)
+            mCommandRunner.cancel();
+        
+        if (mCommandRunner != null && mCommandRunner.isAlive())
+            mCommandRunner.addCommand(new UCommandPerformer() {
+                private boolean isRunning;
+                private int size;
+                
+                @Override
+                public void run() {
+                    isRunning = true;
+                    List<String> cache = new ArrayList<>(mCustomIps);
+                    size = cache.size();
+                    if (size == 0) {
+                        JLog.W(TAG, "Your custom IP list is empty!");
+                        
+                        if (isRunning && !config.isAutoDetect()) {
+                            doGetIpList();
+                            if (isRunning)
+                                checkDomain();
+                            if (isRunning)
+                                detectUCloudIP(true);
+                        }
+                    } else {
+                        doGetIpList();
+                        if (isRunning)
+                            checkDomain();
+                        if (isRunning)
+                            detectCustomIP(true);
+                        if (isRunning && !config.isAutoDetect())
+                            detectUCloudIP(true);
+                    }
+                }
+                
+                @Override
+                public void stop() {
+                    isRunning = false;
+                    if (size > 0 || (size == 0 && !config.isAutoDetect()))
+                        isCheckingDomain(-1);
+                }
+            });
+        
+        return true;
+    }
+    
+    UCNetworkInfo checkNetworkStatus() {
         ConnectivityManager connMgr = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = null;
         if (connMgr != null) {
@@ -321,13 +336,15 @@ public class UCNetAnalysisManager {
         
         if (networkInfo != null && networkInfo.isConnected()) {
             if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
-                WifiManager wifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
-                WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-                if (wifiInfo != null) {
-                    int strength = WifiManager.calculateSignalLevel(wifiInfo.getRssi(), 5);
-                    int speed = wifiInfo.getLinkSpeed();
-                    JLog.T(TAG, "[strength]:" + strength + " [speed]:" + speed + WifiInfo.LINK_SPEED_UNITS);
-                    info.setSignalStrength(wifiInfo.getRssi());
+                WifiManager wifiManager = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wifiManager != null) {
+                    WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+                    if (wifiInfo != null) {
+                        int strength = WifiManager.calculateSignalLevel(wifiInfo.getRssi(), 5);
+                        int speed = wifiInfo.getLinkSpeed();
+                        JLog.T(TAG, "[strength]:" + strength + " [speed]:" + speed + WifiInfo.LINK_SPEED_UNITS);
+                        info.setSignalStrength(wifiInfo.getRssi());
+                    }
                 }
             } else if (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
                 int strength = 0;
@@ -360,19 +377,17 @@ public class UCNetAnalysisManager {
     private NetworkInfo checkNetworkStatus_api23_up(ConnectivityManager connMgr) {
         //获取所有网络连接的信息
         Network[] networks = connMgr.getAllNetworks();
-        //用于存放网络连接信息
-        StringBuilder sb = new StringBuilder();
         //通过循环将网络信息逐个取出来
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         
-        if (networkInfo == null || !networkInfo.isConnectedOrConnecting())
-            for (int i = 0; i < networks.length; i++) {
+        if (networkInfo == null || !networkInfo.isConnected()) {
+            for (int i = 0, len = networks.length; i < len; i++) {
                 //获取ConnectivityManager对象对应的NetworkInfo对象
-                if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
-                    networkInfo = connMgr.getNetworkInfo(networks[i]);
+                networkInfo = connMgr.getNetworkInfo(networks[i]);
+                if (networkInfo != null && networkInfo.isConnected())
                     break;
-                }
             }
+        }
         
         return networkInfo;
     }
@@ -385,23 +400,21 @@ public class UCNetAnalysisManager {
     };
     
     private void startMonitorNetStatus() {
-        if (isStartMonitorNetStatus)
+        if (mNetStatusReceiver != null)
             return;
         
         mNetStatusReceiver = new UNetStatusReceiver();
         IntentFilter intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         intentFilter.addCategory(Intent.CATEGORY_DEFAULT);
         mContext.registerReceiver(mNetStatusReceiver, intentFilter);
-        isStartMonitorNetStatus = true;
         mTelephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
     }
     
     private void stopMonitorNetStatus() {
-        if (!isStartMonitorNetStatus || mNetStatusReceiver == null)
+        if (mNetStatusReceiver == null)
             return;
         
         mContext.unregisterReceiver(mNetStatusReceiver);
-        isStartMonitorNetStatus = false;
         mNetStatusReceiver = null;
     }
     
@@ -416,14 +429,17 @@ public class UCNetAnalysisManager {
         if (ping == null)
             throw new NullPointerException("The parameter (ping) is null !");
         
-        if (mCmdThreadPool != null && !mCmdThreadPool.isShutdown())
-            mCmdThreadPool.execute(ping);
+        if (mCommandRunner != null && mCommandRunner.isAlive()) {
+            boolean res = mCommandRunner.addCommand(ping);
+            JLog.T(TAG, "[add task ping]: " + ping.getConfig().getTargetHost() + " res:" + res);
+        }
     }
     
     private void traceroute(String host, TracerouteCallback callback) {
         if (TextUtils.isEmpty(host))
             throw new NullPointerException("The parameter (host) is null !");
-        Traceroute traceroute = new Traceroute(new Traceroute.Config(host).setThreadSize(3),
+        
+        Traceroute traceroute = new Traceroute(new Traceroute.Config(host),
                 callback);
         traceroute(traceroute);
     }
@@ -432,11 +448,13 @@ public class UCNetAnalysisManager {
         if (traceroute == null)
             throw new NullPointerException("The parameter (traceroute) is null !");
         
-        if (mCmdThreadPool != null && !mCmdThreadPool.isShutdown())
-            mCmdThreadPool.execute(traceroute);
+        if (mCommandRunner != null && mCommandRunner.isAlive()) {
+            boolean res = mCommandRunner.addCommand(traceroute);
+            JLog.T(TAG, "[add task traceroute]: " + traceroute.getConfig().getTargetHost() + " res:" + res);
+        }
     }
     
-    private Boolean flag = false;
+    private Boolean isGettingIpInfo = false;
     
     private class UNetStatusReceiver extends BroadcastReceiver {
         private final String TAG = getClass().getSimpleName();
@@ -453,7 +471,7 @@ public class UCNetAnalysisManager {
             if (!TextUtils.equals(action, ConnectivityManager.CONNECTIVITY_ACTION))
                 return;
             
-            UCNetworkInfo info = UCNetAnalysisManager.getManager().checkNetworkStatus();
+            UCNetworkInfo info = UCNetAnalysisManager.this.checkNetworkStatus();
             JLog.D(TAG, "[status]:" + (info == null ? "null" : info.toString()));
             if (mSdkListener != null)
                 mSdkListener.onNetworkStatusChanged(info);
@@ -461,35 +479,50 @@ public class UCNetAnalysisManager {
             if (info == null || info.getNetStatus() == UCNetStatus.NET_STATUS_NOT_REACHABLE)
                 return;
             
-            synchronized (flag) {
-                if (flag)
+            synchronized (isGettingIpInfo) {
+                if (isGettingIpInfo)
                     return;
                 
-                flag = true;
+                isGettingIpInfo = true;
             }
+            
+            if (mCommandRunner != null)
+                mCommandRunner.cancel();
             
             mCurSrcIpInfo = null;
             mDomainResult = null;
             mDomain = null;
-            
-            if (mCmdThreadPool != null)
-                mCmdThreadPool.shutdownNow();
-            mCmdThreadPool = Executors.newSingleThreadExecutor();
-            
-            clearIpList();
             System.gc();
-            mCmdThreadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    JLog.T(TAG, "run thread:" + Thread.currentThread().getId() + " name:" + Thread.currentThread().getName());
-                    doGetPublicIpInfo();
-                    synchronized (flag) {
-                        flag = false;
+            if (mCommandRunner != null && mCommandRunner.isAlive()) {
+                mCommandRunner.addCommand(new UCommandPerformer() {
+                    private boolean isRunning = true;
+                    
+                    @Override
+                    public void stop() {
+                        isRunning = false;
+                        synchronized (isGettingIpInfo) {
+                            isGettingIpInfo = false;
+                        }
                     }
-                    doGetIpList();
-                }
-            });
-            
+                    
+                    @Override
+                    public void run() {
+                        if (isRunning)
+                            doGetPublicIpInfo();
+                        
+                        synchronized (isGettingIpInfo) {
+                            isGettingIpInfo = false;
+                        }
+                        
+                        if (!isRunning || !config.isAutoDetect())
+                            return;
+                        
+                        doGetIpList();
+                        if (isRunning)
+                            startAutoDetection();
+                    }
+                });
+            }
         }
     }
     
@@ -509,12 +542,10 @@ public class UCNetAnalysisManager {
     }
     
     private void doGetIpList() {
-        if (mCurSrcIpInfo == null)
-            return;
-        
+        clearIpList();
         try {
             Response<UCApiResponseBean<IpListBean>> response = mApiManager.apiGetPingList(mCurSrcIpInfo);
-            if (response == null || response.body() == null) {
+            if (response == null) {
                 JLog.I(TAG, "apiGetPingList: response is null");
                 return;
             }
@@ -526,32 +557,33 @@ public class UCNetAnalysisManager {
             }
             
             if (body.getMeta() == null) {
-                if (body.getMeta().getCode() != 200)
-                    JLog.I(TAG, body.getMeta().toString());
-                
                 JLog.I(TAG, "meta is null !");
                 return;
             }
+            
+            if (body.getMeta().getCode() != 200)
+                JLog.I(TAG, body.getMeta().toString());
             
             if (body.getData() == null) {
                 JLog.I(TAG, "data is null !");
                 return;
             }
             
-            mCacheLock.lock();
             if (randomIpList(body.getData())) {
-                mIpListCache = body.getData();
-                mReportAddr = mIpListCache.getUrl();
-                mDomain = mIpListCache.getDomain();
+                IpListBean bean = body.getData();
+                mUcloudIps = bean.getInfo();
+                mReportAddr = bean.getUrl();
+                mDomain = bean.getDomain();
             }
-            mCacheLock.unlock();
-            
-            checkDomain();
-            enqueueAuto();
-            enqueueCustom();
         } catch (UCHttpException e) {
             JLog.I(TAG, "apiGetPingList error:\n" + e.getMessage());
         }
+    }
+    
+    private void startAutoDetection() {
+        checkDomain();
+        detectUCloudIP(false);
+        detectCustomIP(false);
     }
     
     private boolean randomIpList(IpListBean bean) {
@@ -569,24 +601,21 @@ public class UCNetAnalysisManager {
         return true;
     }
     
-    private boolean isCheckingDomain = false;
-    private ReentrantLock mLockChecking = new ReentrantLock();
+    private Boolean isCheckingDomain = false;
     
     private boolean isCheckingDomain(int flag) {
-        mLockChecking.lock();
-        isCheckingDomain = flag > 0 ? true : (flag < 0 ? false : isCheckingDomain);
-        boolean tmp = isCheckingDomain;
-        mLockChecking.unlock();
-        return tmp;
+        synchronized (isCheckingDomain) {
+            isCheckingDomain = flag > 0 || (flag < 0 ? false : isCheckingDomain);
+        }
+        return isCheckingDomain;
     }
     
-    private void checkDomain() {
+    private synchronized void checkDomain() {
         if (TextUtils.isEmpty(mDomain) || mReportAddr == null || mReportAddr.isEmpty())
             return;
         
-        if (isCheckingDomain(0)) {
+        if (isCheckingDomain(0))
             return;
-        }
         
         isCheckingDomain(1);
         
@@ -594,90 +623,162 @@ public class UCNetAnalysisManager {
         ping(mDomain, mDomainPingCallback);
     }
     
-    private void enqueueAuto() {
-        mCacheLock.lock();
-        if (mIpListCache == null || mReportAddr == null || mReportAddr.isEmpty()) {
-            mCacheLock.unlock();
+    private void detectUCloudIP(boolean isManual) {
+        if (mUcloudIps == null || mUcloudIps.isEmpty() || mReportAddr == null || mReportAddr.isEmpty())
             return;
-        }
         
-        List<IpListBean.InfoBean> list = mIpListCache.getInfo();
-        mCacheLock.unlock();
+        List<IpListBean.InfoBean> list = new ArrayList<>(mUcloudIps);
         if (list == null || list.isEmpty())
             return;
         
+        JLog.I(TAG, String.format("start auto UCloud IP list(%d) detection ...", list.size()));
         for (IpListBean.InfoBean info : list) {
-            ping(new Ping(new Ping.Config(info.getIp(), 5), mReportPingCallback));
+            ping(new Ping(new Ping.Config(info.getIp(), 5),
+                    isManual ? mReportManualUCloudPingCallback : mReportAutoUCloudPingCallback));
             if (info.isNeedTraceroute())
-                traceroute(new Traceroute(new Traceroute.Config(info.getIp()).setThreadSize(3), mReportTracerouteCallback));
+                traceroute(new Traceroute(new Traceroute.Config(info.getIp()),
+                        isManual ? mReportManualUCloudTracerouteCallback : mReportAutoUCloudTracerouteCallback));
         }
     }
     
-    private void enqueueCustom() {
-        mCustomLock.lock();
-        if (mCustomIps == null || mCustomIps.isEmpty() || mReportAddr == null || mReportAddr.isEmpty()) {
-            mCustomLock.unlock();
-            return;
-        }
-        
-        List<String> list = mCustomIps;
-        mCustomLock.unlock();
-        
-        if (list == null || list.isEmpty())
+    private void detectCustomIP(boolean isManual) {
+        if (mCustomIps == null || mCustomIps.isEmpty() || mReportAddr == null || mReportAddr.isEmpty())
             return;
         
+        List<String> list = new ArrayList<>(mCustomIps);
+        
+        if (list.isEmpty())
+            return;
+        
+        JLog.I(TAG, String.format("start auto custom IP list(%d) detection ...", list.size()));
         for (String ip : list) {
-            ping(new Ping(new Ping.Config(ip, 5), mReportCustomPingCallback));
-            traceroute(new Traceroute(new Traceroute.Config(ip).setThreadSize(3),
-                    mReportCustomTracerouteCallback));
+            ping(new Ping(new Ping.Config(ip, 5),
+                    isManual ? mReportManualCustomPingCallback : mReportAutoCustomPingCallback));
+            traceroute(new Traceroute(new Traceroute.Config(ip),
+                    isManual ? mReportManualCustomTracerouteCallback : mReportAutoCustomTracerouteCallback));
         }
     }
     
     private PingCallback mDomainPingCallback = new PingCallback() {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
-            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+            JLog.D(TAG, String.format("[ping domain]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             isCheckingDomain(-1);
             mDomainResult = new PingDomainResult(result, status);
         }
     };
     
-    private PingCallback mReportPingCallback = new PingCallback() {
+    /**
+     * ***************************** PingCallback *************************************
+     */
+    private PingCallback mReportAutoUCloudPingCallback = new PingCallback() {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
             JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
                 return;
             
-            reportPing(result, mReportAddr);
+            reportUCloudPing(result, mReportAddr, false);
         }
     };
     
-    private PingCallback mReportCustomPingCallback = new PingCallback() {
+    private PingCallback mReportManualUCloudPingCallback = new PingCallback() {
         @Override
         public void onPingFinish(PingResult result, UCommandStatus status) {
             JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
             if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
                 return;
             
-            reportCustomIpPing(result, mReportAddr);
+            reportUCloudPing(result, mReportAddr, true);
         }
     };
     
-    private void reportCustomIpPing(PingResult result, List<String> reportAddr) {
-        reportPing(result, true, reportAddr);
+    private PingCallback mReportAutoCustomPingCallback = new PingCallback() {
+        @Override
+        public void onPingFinish(PingResult result, UCommandStatus status) {
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                return;
+            
+            reportCustomIpPing(result, mReportAddr, false);
+        }
+    };
+    
+    private PingCallback mReportManualCustomPingCallback = new PingCallback() {
+        @Override
+        public void onPingFinish(PingResult result, UCommandStatus status) {
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                return;
+            
+            reportCustomIpPing(result, mReportAddr, true);
+        }
+    };
+    
+    /**
+     * ***************************** TracerouteCallback *************************************
+     */
+    private TracerouteCallback mReportAutoUCloudTracerouteCallback = new TracerouteCallback() {
+        @Override
+        public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                return;
+            
+            reportUCloudTraceroute(result, mReportAddr, false);
+        }
+    };
+    
+    private TracerouteCallback mReportManualUCloudTracerouteCallback = new TracerouteCallback() {
+        @Override
+        public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                return;
+            
+            reportUCloudTraceroute(result, mReportAddr, true);
+        }
+    };
+    
+    private TracerouteCallback mReportAutoCustomTracerouteCallback = new TracerouteCallback() {
+        @Override
+        public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                return;
+            
+            reportCustomIpTraceroute(result, mReportAddr, false);
+        }
+    };
+    
+    private TracerouteCallback mReportManualCustomTracerouteCallback = new TracerouteCallback() {
+        @Override
+        public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
+            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
+            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
+                return;
+            
+            reportCustomIpTraceroute(result, mReportAddr, true);
+        }
+    };
+    
+    
+    /**
+     * ********************************  Report Ping Method  **************************************
+     */
+    private void reportCustomIpPing(PingResult result, List<String> reportAddr, boolean isManual) {
+        reportPing(result, true, reportAddr, isManual);
     }
     
-    private void reportPing(PingResult result, List<String> reportAddr) {
-        reportPing(result, false, reportAddr);
+    private void reportUCloudPing(PingResult result, List<String> reportAddr, boolean isManual) {
+        reportPing(result, false, reportAddr, isManual);
     }
     
-    private void reportPing(PingResult result, boolean isCustomIp, List<String> reportAddr) {
+    private void reportPing(PingResult result, boolean isCustomIp, List<String> reportAddr, boolean isManual) {
         if (result == null || reportAddr == null || reportAddr.isEmpty())
             return;
         
-        List<String> reportArrdCache = new ArrayList<>();
-        reportArrdCache.addAll(reportAddr);
+        List<String> reportArrdCache = new ArrayList<>(reportAddr);
         
         PingDataBean report = new PingDataBean();
         report.setTimestamp(result.getTimestamp());
@@ -690,11 +791,9 @@ public class UCNetAnalysisManager {
         if (result.lossRate() < 100) {
             pingStatus = 0;
         } else {
-            if (mDomainResult == null
-                    || mDomainResult.getPingResult() == null
-                    || !mDomainResult.getStatus().equals(UCommandStatus.CMD_STATUS_SUCCESSFUL)) {
-                pingStatus = 2;
-            } else {
+            if (mDomainResult != null
+                    && mDomainResult.getPingResult() != null
+                    && mDomainResult.getStatus().equals(UCommandStatus.CMD_STATUS_SUCCESSFUL)) {
                 pingStatus = mDomainResult.getPingResult().lossRate() < 100 ? 0 : 1;
             }
         }
@@ -704,7 +803,7 @@ public class UCNetAnalysisManager {
                 return;
             try {
                 Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportPing(reportArrdCache.get(i), report,
-                        pingStatus, isCustomIp, mCurSrcIpInfo, userDefinedData);
+                        pingStatus, isCustomIp, mCurSrcIpInfo, isManual, userDefinedData);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
@@ -717,43 +816,23 @@ public class UCNetAnalysisManager {
         }
     }
     
-    private TracerouteCallback mReportTracerouteCallback = new TracerouteCallback() {
-        @Override
-        public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
-            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
-            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
-                return;
-            
-            reportTraceroute(result, mReportAddr);
-        }
-    };
-    
-    private TracerouteCallback mReportCustomTracerouteCallback = new TracerouteCallback() {
-        @Override
-        public void onTracerouteFinish(TracerouteResult result, UCommandStatus status) {
-            JLog.D(TAG, String.format("[status]:%s [res]:%s", status.name(), result == null ? "null" : result.toString()));
-            if (result == null || status != UCommandStatus.CMD_STATUS_SUCCESSFUL)
-                return;
-            
-            reportCustomIpTraceroute(result, mReportAddr);
-        }
-    };
-    
-    private void reportCustomIpTraceroute(TracerouteResult result, List<String> reportAddr) {
-        reportTraceroute(result, true, reportAddr);
+    /**
+     * ********************************  Report Ping Method  **************************************
+     */
+    private void reportCustomIpTraceroute(TracerouteResult result, List<String> reportAddr, boolean isManual) {
+        reportTraceroute(result, true, reportAddr, isManual);
     }
     
-    private void reportTraceroute(TracerouteResult result, List<String> reportAddr) {
-        reportTraceroute(result, false, reportAddr);
+    private void reportUCloudTraceroute(TracerouteResult result, List<String> reportAddr, boolean isManual) {
+        reportTraceroute(result, false, reportAddr, isManual);
     }
     
     private void reportTraceroute(TracerouteResult result, boolean isCustomIp, List<
-            String> reportAddr) {
+            String> reportAddr, boolean isManual) {
         if (result == null || reportAddr == null || reportAddr.isEmpty())
             return;
         
-        List<String> reportArrdCache = new ArrayList<>();
-        reportArrdCache.addAll(reportAddr);
+        List<String> reportArrdCache = new ArrayList<>(reportAddr);
         
         TracerouteDataBean report = new TracerouteDataBean();
         report.setTimestamp(result.getTimestamp());
@@ -773,7 +852,7 @@ public class UCNetAnalysisManager {
                 return;
             try {
                 Response<UCApiResponseBean<MessageBean>> response = mApiManager.apiReportTraceroute(reportArrdCache.get(i), report,
-                        isCustomIp, mCurSrcIpInfo, userDefinedData);
+                        isCustomIp, mCurSrcIpInfo, isManual, userDefinedData);
                 JLog.D(TAG, "[response]:" + (response == null || response.body() == null ? "null" : response.body().toString()));
                 if (response != null && response.body() != null && response.body().getMeta() != null
                         && response.body().getMeta().getCode() == 200)
@@ -787,12 +866,15 @@ public class UCNetAnalysisManager {
     }
     
     private void clearIpList() {
-        mCacheLock.lock();
-        mIpListCache = null;
-        if (mReportAddr == null)
-            mReportAddr = new ArrayList<>();
-        else
+        if (mUcloudIps != null)
+            mUcloudIps.clear();
+        if (mReportAddr != null)
             mReportAddr.clear();
-        mCacheLock.unlock();
+    }
+    
+    private void clearCache() {
+        clearIpList();
+        if (mCustomIps != null)
+            mCustomIps.clear();
     }
 }

@@ -6,14 +6,14 @@
 
 ## 运行环境
 ### Android
-
 - Android系统版本：**4.1** (API 16)及以上
 
 </br></br>
 
 ## 使用
 ### makeJar
-* 在`SDK项目根目录`/UNetAnalysisLib/build.gradle 中有`makeJar`和`makeProguardJar`两个task，分别是编译普通jar和混淆后的jar
+* 在`SDK项目根目录/UNetAnalysisLib/build.gradle` 中有`makeJar`和`makeProguardJar`两个task，分别是编译普通jar和混淆后的jar
+* 编译任务完成后，jar包会存放在`SDK项目根目录/UNetAnalysisLib/build/libs/`下，`proguard-UNetAnalysisLib.jar`是混淆包，`UNetAnalysisLib.jar`是普通包
 * 图解：
 
     ![avatar](http://esl-ipdd-res.cn-sh2.ufileos.com/WX20190306-155134.png)
@@ -23,7 +23,6 @@
 - 将NetAnalysisLib.jar放入项目app模块中的libs目录下，并在app模块的build.gradle的dependencies中建立依赖
 
 </br>
-
 
 ### AndroidManifest配置
 以下是NetAnalysis SDK所需要的Android权限，请确保您的AndroidManifest.xml文件中已经配置了这些权限，否则，SDK将无法正常工作。
@@ -46,7 +45,6 @@
             ...
     </application>
     ```
-
 
 </br>
 
@@ -74,25 +72,64 @@
 
 </br></br>
 
-### 快速接入
-#### 1、在**自定义Application类**或者**主Activity类**的onCreate中构建UCNetAnalysisManager，并注册
+## 快速接入
+### 1、初始化SDK模块
+
 ``` java
-// 使用Application Context 构建UCNetAnalysisManager实例
+// 使用Application Context 初始化 UmqaClient
 String appKey = "UCloud为您的APP分配的APP_KEY";
 String appSecret = "UCloud为您的APP分配的APP_SECRET";
 
+// 初始化SDK模块
+boolean result = UmqaClient.init(getApplicationContext(), appKey, appSecret);
+// result = true : 初始化成功; false : 表示重复初始化，需要先调用UmqaClient.destroy()
+```
+
+### 2、配置信息
+
+``` java
+// 配置待检测的用户自定义IP
+List<String> ips = new ArrayList();
+ips.add("8.8.8.8");
+
+// 不支持填写域名，请填写IP地址
+UmqaClient.setCustomIps(ips);
+
+// 用户自定义上报字段，字段为String-String的键值对Map
+UserDefinedData.Builder builder = new UserDefinedData.Builder();
+// 或者：UserDefinedData.Builder builder = new UserDefinedData.Builder(Map<String, String>);
+builder.addParam(new UserDefinedData.UserDefinedParam("id", sb.toString()));
+
 /**
- * 定义设置项
- * new UCConfig() : 默认LogLevel.RELEASE
+ * 所有的自定义字段将会以以下JSON数据的最小化字符串形式上报，转换成字符串后的最大长度为 1024 Byte。
+ * 超长将会在create()时抛出异常
+ * [
+ *     {"key":"your key1","val":"your value1"},
+ *     {"key":"your key2","val":"your value2"},
+ *     ...
+ * ]
  */
-UCConfig config = new UCConfig(UCConfig.LogLevel.DEBUG);
+try {
+    UserDefinedData param = builder.create();
+    UmqaClient.setUserDefinedData(param);
+} catch (UCParamVerifyException e) {
+    e.printStackTrace();
+}
+```
 
-UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext(), appKey, appSecret, config);
+### 3、注册启用SDK，建议在**自定义Application类**或者**主Activity类**的onCreate中调用
 
-// or: 使用默认new UCConfig(), Log级别RELEASE
-UCNetAnalysisManager manager = UCNetAnalysisManager.createManager(context.getApplicationContext(), appKey, appSecret);
+### 注意事项：
+- 若使用默认UCConfig进行register，（即：调用register(OnSdkListener listener)，或者手动声明new UCConfig(LogLevel, **isAutoDetect = true**)）, 表示允许SDK**自动检测**。
+- **自动检测** 会在以下时机进行检测IP：
+    - register之后，自动检测UCloud数据中心IP（最近的5个），若有CustomIPs则也会加入检测队列检测
+    - 网络发生改变后，自动检测UCloud数据中心IP（最近的5个），若有CustomIPs则也会加入检测队列检测
+    - setCustomIps()之后，自动将CustomIPs加入检测队列检测
+- 如果允许自动检测，并希望检测结果上报都包含自定义字段，**那么需要在register之前，先调用UmqaClient.setUserDefinedData()**，否则可能出现部分自动检测上报的数据来不及取得用户自定义上报字段
+- 如果不允许自动检测，则只有当用户手动调用UmqaClient.analyse()接口时才会检测并上报
 
-// SDK回调
+``` java
+// SDK回调，异步回调，非主线程
 OnSdkListener sdkListener = new OnSdkListener() {
     @Override
     public void onRegister(UCSdkStatus status) {
@@ -105,61 +142,32 @@ OnSdkListener sdkListener = new OnSdkListener() {
     }
 };
 
-// (可选) - 用户自定义上报字段，字段为String-String的键值对Map
-UserDefinedData.Builder builder = new UserDefinedData.Builder();
-// or 
-// UserDefinedData.Builder builder = new UserDefinedData.Builder(Map<String, String>);
-builder.addParam(new UserDefinedData.UserDefinedParam("id", sb.toString()));
-UserDefinedData param = null;
 /**
- * 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的最大长度为 1024 Byte。
- * 超长将会抛出异常
- * [
- *      {
- *          "key": "",
- *          "val": ""
- *      },
- *      ...
- * ]
+ * 定义设置项
+ * new UCConfig() : 默认值：LogLevel.RELEASE, 开启自动检测
  */
-try {
-    param = builder.create();
-} catch (UCParamVerifyException e) {
-    e.printStackTrace();
-}
+UCConfig config = new UCConfig(UCConfig.LogLevel.DEBUG, true);
 
 /**
- * 注册sdk模块，注册成功之后，若当前有可用网络，即会自动开始检测网络质量
- * 注意：
- *   manager.register(listener, null) == manager.register(listener)
+ * 注册SDK，开始监听网络，开启检测功能
+ * 两种register方式可选：
+ * 1、register(OnSdkListener listener)，使用默认值UCConfig
+ * 2、register(OnSdkListener listener, UCConfig config)，使用自定义UCConfig
  */
-manager.register(sdkListener, param); // 配置自定义上报字段的注册
-
+boolean result = UmqaClient.register(this, config);
+// result = true : register成功; false : register失败，没有init
 ```
 
 
-#### 2、配置你需要分析网络质量的IP地址或者域名
-``` java
-List<String> ips = new ArrayList();
-ips.add("127.0.0.1");
-ips.add("127.0.0.2");
+### 4、在你的应用退出时，注销并销毁 UmqaClient
 
-/*
- * 配置你想要监测的网络质量的ip，配置后即加入自动检测的队列，无需触发
- * 注意：不支持填写域名，请填写IP地址
- */
-manager.setCustomIps(ips);
-```
-
-
-#### 3、在你的应用退出时，注销并销毁UCNetAnalysisManager
 ``` java
 @Override
 protected void onDestroy(){
-    // 注销UCNetAnalysisManager模块，注销后将停止一切未完成的操作
-    manager.unregister();
-    // 销毁UCNetAnalysisManager实例以释放内存空间
-    UCNetAnalysisManager.destroy();
+    // 注销SDK模块，注销后将停止一切未完成的操作
+    UmqaClient.unregister();
+    // 销毁SDK实例以释放内存空间
+    UmqaClient.destroy();
     super.onDestroy();
 }
 ```
@@ -167,116 +175,189 @@ protected void onDestroy(){
 </br></br>
 
 ## 类
+### UmqaClient
+> UmqaClient是UMQA产品移动网络探测SDK部分的主要类，一切本地API都只需要在UmqaClient中操作调用
 
-### UCNetAnalysisManager
-> UNetAnalysisSDK的主要模块，你将多次使用UCNetAnalysisManager的单例对象进行SDK业务接口的操作
+</br>
 
-#### 创建默认Config的UCNetAnalysisManager单例对象
+#### 初始化UmqaClient
+- 若appKey和appSecret不符合规则，则会抛出**IllegalArgumentException**
+
 ``` java
-public static UCNetAnalysisManager createManager(Context applicationContext, String appKey, String appSecret)
+public static synchronized boolean init(@NonNull Context applicationContext, @NonNull String appKey, @NonNull String appSecret)
 ```
 - **param**:
     -  applicationContext: application的context
     -  appKey: UCloud为您的APP分配的APP_KEY
     -  appSecret: UCloud为您的APP分配的APP_SECRET
-- **return**: UCNetAnalysisManager单例对象
+- **return**: 是否init成功，若重复init，则返回false，需要先destroy后重新init
 
-#### 创建自定义Config的UCNetAnalysisManager单例对象
-``` java
-public static UCNetAnalysisManager createManager(Context applicationContext, String appKey, String appSecret, UCConfig config)
-```
-- **param**:
-    -  applicationContext: application的context
-    -  appKey: UCloud为您的APP分配的APP_KEY
-    -  appSecret: UCloud为您的APP分配的APP_SECRET
-    -  config: 设置选项，详情见**UCConfig**说明
-- **return**: UCNetAnalysisManager单例对象
+</br>
 
-#### 获取UCNetAnalysisManager单例对象
-``` java
-public static UCNetAnalysisManager getManager()
-```
-
-- **param**: -
-- **return**: UCNetAnalysisManager单例对象，若未调用createManager，则return为null
-
-#### 注册UCNetAnalysisManager模块
-- 注册成功后，若当前存在可用网络，将会自动开始检测网络质量
+#### 注册UmqaClient
 
 ``` java
-public void register(OnSdkListener listener)
+public synchronized static boolean register(OnSdkListener listener) 
 ```
 
 - **param**: 
     - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
-- **return**: -
+- **return**: 是否register成功，若没有init，则返回false
 
-#### 注册UCNetAnalysisManager模块(带有用户自定义上报字段)
+</br>
+
+#### 注册UmqaClient (带有自定义配置项)
 ``` java
-public void register(OnSdkListener listener, UserDefinedData userDefinedData)
+public synchronized static boolean register(OnSdkListener listener, UCConfig config)
 ```
 
 - **param**: 
     - listener: OnSdkListener回调接口，详情见**OnSdkListener**说明
-    - userDefinedData: 用户自定义上报字段，详情见**UserDefinedData**说明
-- **return**: -
+    - config: 自定义配置项，详情见**UCConfig**说明
+- **return**: 是否register成功，若没有init，则返回false
 
+</br>
 
-#### 设置Sdk回调接口
+#### 设置SDK回调接口
 ``` java
-public void setSdkListener(OnSdkListener listener)
+public synchronized static boolean setSdkListener(OnSdkListener listener)
 ```
 
 - **param**: 
     - listener:  OnSdkListener回调接口，详情见**OnSdkListener**说明
-- **return**: -
+- **return**: 是否设置成功，若没有init，则返回false
 
-#### 设置自定义的IP地址
+</br>
+
+#### 设置自定义的IP列表
+- 最多5个IP，多于5个的，自动取前5个 
+- 不支持填写域名，请填写IP地址
+
 ``` java
-public void setCustomIps(List<String> ips)
+public synchronized static boolean setCustomIps(List<String> custonIps)
 ```
 
-##### 注意：不支持填写域名，请填写IP地址
-
 - **param**: 
-    - ips:  自定义需要网络分析的IP地址列表
-- **return**: -
+    - custonIps:  自定义的IP列表
+- **return**: 是否设置成功，若没有init，则返回false
+
+</br>
 
 #### 获取已设置的自定义的IP地址
 ``` java
-public List<String> getCustomIps()
+public synchronized static List<String> getCustomIps()
 ```
 
 - **param**: -
 - **return**: 
-    - List<String>:  已设置的需要网络分析的IP地址或域名列表
+    - List<String>:  已设置的自定义IP列表，**null**: UmqaClient未init
+
+</br>
+
+#### 设置自定义上报字段
+``` java
+public synchronized static boolean setUserDefinedData(UserDefinedData userDefinedData)
+```
+
+- **param**: 
+    - userDefinedData: 自定义上报字段，详情见**UserDefinedData**
+- **return**: 是否设置成功，若没有init，则返回false
+
+</br>
+
+#### 手动触发网络检测
+``` java
+public synchronized static boolean analyse()
+```
+
+- **param**: -
+- **return**: 是否触发成功，若没有init或者没有register，则返回false
+
+</br>
 
 #### 检查当前设备网络状态
 ``` java
-public UCNetworkInfo checkNetworkStatus()
+public synchronized static UCNetworkInfo checkNetworkStatus()
 ```
 
 - **param**: -
 - **return**: 
-    - UCNetworkInfo:  当前设备的网络状态，详情见**UCNetworkInfo**
+    - UCNetworkInfo:  当前设备的网络状态，详情见**UCNetworkInfo**，**null** 表示可能UmqaClient未init
 
-#### 注销UCNetAnalysisManager模块
+</br>
+
+#### 注销UmqaClient模块
 ``` java
-public void unregister()
+public synchronized static boolean unregister()
 ```
 
 - **param**: -
-- **return**: -
+- **return**: 是否unregister成功，若没有init，则返回false
 
-#### 销毁UCNetAnalysisManager单例对象
+</br>
+
+#### 销毁UmqaClient模块
 ``` java
-public static void destroy()
+public synchronized static void destroy()
 ```
 
 - **param**: -
 - **return**: -
 
 </br></br>
+
+### UCConfig
+> 设置选项
+
+``` java
+public class UCConfig {
+    
+    public enum LogLevel {
+        TEST,
+        DEBUG,
+        RELEASE
+    }
+    
+    /**
+     * @param logLevel     Log级别，default = {@link UCConfig.LogLevel.RELEASE}
+     * @param isAutoDetect 是否开启自动检测, default = true
+     */
+    public UCConfig(LogLevel logLevel, boolean isAutoDetect) {
+        ...
+    }
+    
+    /**
+     * 构造方法
+     *
+     * @param isAutoDetect 是否开启自动检测, default = true
+     */
+    public UCConfig(boolean isAutoDetect) {
+        ...
+    }
+    
+    /**
+     * 构造方法
+     *
+     * @param logLevel Log级别，default = {@link UCConfig.LogLevel.RELEASE}
+     */
+    public UCConfig(LogLevel logLevel) {
+        ...
+    }
+    
+    /**
+     * 构造方法
+     * 
+     * LogLevel = {@link UCConfig.LogLevel.RELEASE}
+     * isAutoDetect = true
+     */
+    public UCConfig() {
+        ...
+    }
+}
+```
+
+</br></br>
+
 ### UserDefinedData
 > 用户可选的自定义上报字段
 
@@ -305,25 +386,24 @@ public class UserDefinedData {
 ### 注意事项
 ### UCloud尊重客户和终端用户的隐私，请务必不要上传带有用户隐私信息，包括但不限于：用户的姓名、手机号、身份证号、手机IMEI值、地址等敏感信息
 - UserDefinedData是(String-String)键值对Map，其中Key不能是null或者""。
-- 如果有不满足规则的UserDefinedData，UserDefinedData.Builder.create()时会抛出UCParamVerifyException，具体错误信息，可以通过异常的getMessage()获取。
+- 如果有不满足规则的UserDefinedData，`UserDefinedData.Builder create()`时会抛出`UCParamVerifyException`，具体错误信息，可以通过异常的getMessage()获取。
 - 该字段作为用户在查询上报数据时，可作为查询索引，故**不建议用户在Value中拼接多个值**。
 - 所有的自定义字段将会以以下JSON的最小化字符串形式上报，转换成字符串后的**最大长度为1024Byte**。
-  超长将会抛出异常
+  超长将会在`UserDefinedData.Builder create()`时抛出异常
   
     ``` json
     [
-        {
-            "key": "",
-            "val": ""
-        },
+        {"key": "your key1", "val": "your value1"},
+        {"key": "your key2", "val": "your value2"},
         ...
     ]
     ```
 
 
 </br></br>
+
 ### OnSdkListener
-> UCNetAnalysisManager模块回调接口
+> UmqaClient模块回调接口，**非主线程异步回调**
 
 ``` java
 public interface OnSdkListener {
@@ -336,6 +416,7 @@ public interface OnSdkListener {
 ```
 
 </br></br>
+
 ### UCNetworkInfo
 > UNetAnalysisSDK状态集
 
@@ -354,20 +435,38 @@ public class UCNetworkInfo {
 
 
 </br></br>
+
 ### UCSdkStatus
 > UNetAnalysisSDK状态集
 
 ``` java
 public enum UCSdkStatus {
-    // 注册模块成功
+    /**
+     * 注册模块成功
+     */
     REGISTER_SUCCESS,
-    // APPID或者APPKEY无效
-    APPID_OR_APPKEY_ILLEGAL,
+    /**
+     * 已注册过SDK
+     */
+    SDK_HAS_BEEN_REGISTERED,
+    /**
+     * 正在注册SDK中
+     */
+    SDK_IS_REGISTING,
+    /**
+     * SDK获取授权失败
+     */
+    OBTAIN_AUTH_FAILED,
+    /**
+     * SDK被远程关闭
+     */
+    SDK_IS_CLOSED_BY_REMOTE
 }
 ```
 
 
 </br></br>
+
 ### UCNetStatus
 > 网络状态集
 
@@ -393,30 +492,7 @@ public enum UCNetStatus {
 }
 ```
 
-</br></br>
-### UCConfig
-> 设置选项
-
-``` java
-public class UCConfig {
-    
-    public enum LogLevel {
-        TEST,
-        DEBUG,
-        RELEASE
-    }
-    
-    // 配置LogLevel
-    public UCConfig(UCConfig.LogLevel logLevel) {
-        // 构造方法
-    }
-
-    // 默认 LogLevel.RELEASE
-    public UCConfig() {
-        // 构造方法
-    }
-}
-```
+</br></br></br>
 
 ## License
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)

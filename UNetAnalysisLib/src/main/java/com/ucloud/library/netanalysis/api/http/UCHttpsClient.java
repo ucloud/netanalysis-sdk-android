@@ -22,7 +22,7 @@ public class UCHttpsClient extends UCHttpClient {
     public <T> Response<T> execute(Request request, JsonDeserializer<T> deserializer) throws UCHttpException {
         if (request == null)
             throw new UCHttpException("request can not be null");
-        HttpsURLConnection connection = null;
+        HttpsURLConnection connection ;
         try {
             connection = (HttpsURLConnection) request.url().openConnection();
             connection.setConnectTimeout(timeoutConnect);

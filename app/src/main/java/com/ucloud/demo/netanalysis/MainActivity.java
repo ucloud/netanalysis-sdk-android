@@ -1,52 +1,44 @@
 package com.ucloud.demo.netanalysis;
 
-import android.app.ProgressDialog;
-import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v7.app.AlertDialog;
+import android.os.Message;
+import android.os.SystemClock;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.AppCompatEditText;
-import android.text.TextUtils;
 import android.view.View;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ucloud.library.netanalysis.UCNetAnalysisManager;
-import com.ucloud.library.netanalysis.callback.OnAnalyseListener;
+import com.ucloud.library.netanalysis.UmqaClient;
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
 import com.ucloud.library.netanalysis.exception.UCParamVerifyException;
-import com.ucloud.library.netanalysis.module.UserDefinedData;
-import com.ucloud.library.netanalysis.module.UCAnalysisResult;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;
 import com.ucloud.library.netanalysis.module.UCSdkStatus;
+import com.ucloud.library.netanalysis.module.UserDefinedData;
 import com.ucloud.library.netanalysis.utils.UCConfig;
 import com.ucloud.library.netanalysis.utils.JLog;
+
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnSdkListener {
     private final String TAG = getClass().getSimpleName();
     private volatile WeakReference<Handler> mWeakHandler;
-    private ProgressDialog mProgressDialog;
-    private AlertDialog.Builder mAlertBuilder;
-    
-    /**
-     * 定义设置项
-     * new UCConfig() : 默认LogLevel.RELEASE
-     */
-    private UCConfig config = new UCConfig(UCConfig.LogLevel.DEBUG);
-    
-    private UCNetAnalysisManager mUCNetAnalysisManager;
-    
+    private ScrollView srcollview;
     private TextView txt_result;
-    private AppCompatEditText edit_host;
     
     private String appKey = UCloud为您的APP分配的APP_KEY;
     private String appSecret = UCloud为您的APP分配的APP_SECRET;
@@ -55,47 +47,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mUCNetAnalysisManager = UCNetAnalysisManager.createManager(getApplicationContext(), appKey, appSecret, config);
         
+        // 初始化SDK模块
+        UmqaClient.init(getApplicationContext(), appKey, appSecret);
+        
+        srcollview = findViewById(R.id.srcollview);
         txt_result = findViewById(R.id.txt_result);
-        edit_host = findViewById(R.id.edit_host);
-        edit_host.setText("106.75.79.228\n115.239.210.27");
-        mAlertBuilder = new AlertDialog.Builder(this);
         
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.setCanceledOnTouchOutside(false);
-        mProgressDialog.setMessage("Waiting...");
-        
-        mAlertBuilder.setTitle("Error").setMessage("请输入合法的Host")
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                }).setCancelable(false);
-        
+        findViewById(R.id.btn_register).setOnClickListener(this);
+        findViewById(R.id.btn_unregister).setOnClickListener(this);
         findViewById(R.id.btn_set_ips).setOnClickListener(this);
+        findViewById(R.id.btn_get_ips).setOnClickListener(this);
+        findViewById(R.id.btn_set_user_defined).setOnClickListener(this);
         findViewById(R.id.btn_analyse).setOnClickListener(this);
         findViewById(R.id.btn_net_status).setOnClickListener(this);
-        
-        UserDefinedData.Builder builder = new UserDefinedData.Builder();
-        builder.putParam(new UserDefinedData.UserDefinedParam("id", "This is a test data"));
-        UserDefinedData param = null;
-        try {
-            param = builder.create();
-        } catch (UCParamVerifyException e) {
-            e.printStackTrace();
-        }
-        /**
-         * register(listener, null) == register(listener)
-         */
-        mUCNetAnalysisManager.register(this, param);
     }
     
     private synchronized Handler getHandler() {
         if (mWeakHandler == null || mWeakHandler.get() == null) {
-            mWeakHandler = new WeakReference<>(new Handler(Looper.getMainLooper()));
+            mWeakHandler = new WeakReference<Handler>(new Handler(Looper.getMainLooper()) {
+                @Override
+                public void handleMessage(Message msg) {
+                    if (msg == null)
+                        return;
+                    
+                    Bundle bd = msg.getData();
+                    String info;
+                    if (bd == null || (info = bd.getString("msg", null)) == null)
+                        return;
+                    
+                    StringBuilder sb = new StringBuilder(info).append("\n\n");
+                    String histroy = txt_result.getText() == null ? "" : txt_result.getText().toString().trim();
+                    sb.append(histroy);
+                    txt_result.setText(sb.toString());
+                    srcollview.smoothScrollTo(0, 0);
+                }
+            });
         }
         
         return mWeakHandler.get();
@@ -113,78 +100,196 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     
     @Override
     protected void onDestroy() {
-        mUCNetAnalysisManager.unregister();
-        UCNetAnalysisManager.destroy();
+        UmqaClient.unregister();
+        UmqaClient.destroy();
         super.onDestroy();
     }
+    
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
     
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_analyse: {
-                edit_host.clearFocus();
-                txt_result.setText("");
-                mProgressDialog.show();
-                mUCNetAnalysisManager.analyse(new OnAnalyseListener() {
+            case R.id.btn_register: {
+                new ConfigDialog(new ConfigDialog.OnConfigListener() {
                     @Override
-                    public void onAnalysed(final UCAnalysisResult result) {
-                        JLog.I(TAG, result.toString());
-                        getHandler().post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mProgressDialog.dismiss();
-                                try {
-                                    txt_result.setText(new JSONObject(result.toString()).toString(4));
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
+                    public void onCommitConfig(UCConfig config) {
+                        boolean res = UmqaClient.register(MainActivity.this, config);
+                        Message msg = new Message();
+                        Bundle bd = new Bundle();
+                        bd.putString("msg", String.format("[%s]: register -> %b", dateFormat.format(
+                                new Date(System.currentTimeMillis())), res));
+                        msg.setData(bd);
+                        getHandler().sendMessage(msg);
                     }
-                });
+                }, ((DemoApplication) getApplication()).getSharedPreferences()).show(getSupportFragmentManager(), "ConfigDialog");
                 
                 break;
             }
+            case R.id.btn_unregister: {
+                boolean res = UmqaClient.unregister();
+                Message msg = new Message();
+                Bundle bd = new Bundle();
+                bd.putString("msg", String.format("[%s]: unregister -> %b", dateFormat.format(
+                        new Date(System.currentTimeMillis())), res));
+                msg.setData(bd);
+                getHandler().sendMessage(msg);
+                break;
+            }
             case R.id.btn_set_ips: {
-                /**
-                 * 可以配置自定义需要检测的IP地址
-                 */
-                edit_host.clearFocus();
-                txt_result.setText("");
-                String host = edit_host.getText().toString().trim();
-                if (TextUtils.isEmpty(host)) {
-                    mAlertBuilder.create().show();
-                    return;
+                startActivityForResult(CustomIpActivity.startAction(this), CustomIpActivity.REQUEST_CODE);
+                break;
+            }
+            case R.id.btn_get_ips: {
+                List<String> ips = UmqaClient.getCustomIps();
+                Message msg = new Message();
+                Bundle bd = new Bundle();
+                StringBuilder sb = new StringBuilder(String.format("[%s]: get custom IPs -> ", dateFormat.format(
+                        new Date(System.currentTimeMillis()))));
+                if (ips == null || ips.isEmpty()) {
+                    sb.append("Empty");
+                } else {
+                    for (String ip : ips) {
+                        sb.append("\n\t\t");
+                        sb.append(ip);
+                    }
                 }
-                
-                List<String> ips = new ArrayList<>();
-                String[] cache = host.split("\n");
-                for (String str : cache) {
-                    if (!TextUtils.isEmpty(str))
-                        ips.add(str);
-                }
-                mUCNetAnalysisManager.setCustomIps(ips);
-                Toast.makeText(this, "配置成功", Toast.LENGTH_SHORT).show();
+                bd.putString("msg", sb.toString());
+                msg.setData(bd);
+                getHandler().sendMessage(msg);
+                break;
+            }
+            case R.id.btn_set_user_defined: {
+                startActivityForResult(UserDefinedDataActivity.startAction(this), UserDefinedDataActivity.REQUEST_CODE);
+                break;
+            }
+            case R.id.btn_analyse: {
+                boolean res = UmqaClient.analyse();
+                Message msg = new Message();
+                Bundle bd = new Bundle();
+                bd.putString("msg", String.format("[%s]: detect -> %b", dateFormat.format(
+                        new Date(System.currentTimeMillis())), res));
+                msg.setData(bd);
+                getHandler().sendMessage(msg);
                 
                 break;
             }
             case R.id.btn_net_status: {
-                UCNetworkInfo networkInfo = mUCNetAnalysisManager.checkNetworkStatus();
-                txt_result.setText(networkInfo == null ? "null" : networkInfo.toString());
+                UCNetworkInfo networkInfo = UmqaClient.checkNetworkStatus();
+                Message msg = new Message();
+                Bundle bd = new Bundle();
+                bd.putString("msg", String.format("[%s]: net status -> \n\t\t%s", dateFormat.format(
+                        new Date(System.currentTimeMillis())), networkInfo == null ? "null" : networkInfo.toString()));
+                msg.setData(bd);
+                getHandler().sendMessage(msg);
                 break;
             }
         }
     }
     
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        switch (requestCode) {
+            case CustomIpActivity.REQUEST_CODE: {
+                if (resultCode != RESULT_OK)
+                    return;
+                
+                if (data == null)
+                    return;
+                
+                List<String> customIPs = data.getStringArrayListExtra("custom_ips");
+                
+                boolean res = UmqaClient.setCustomIps(customIPs);
+                Message msg = new Message();
+                Bundle bd = new Bundle();
+                bd.putString("msg", String.format("[%s]: set custom IPs -> %b", dateFormat.format(
+                        new Date(System.currentTimeMillis())), res));
+                msg.setData(bd);
+                getHandler().sendMessage(msg);
+                return;
+            }
+            case UserDefinedDataActivity.REQUEST_CODE: {
+                if (resultCode != RESULT_OK)
+                    return;
+                
+                if (data == null)
+                    return;
+                
+                String json = data.getStringExtra("user_defined_data");
+                UserDefinedData.Builder builder = new UserDefinedData.Builder();
+                try {
+                    JSONObject jobj = new JSONObject(json);
+                    Iterator<String> iterator = jobj.keys();
+                    while (iterator.hasNext()) {
+                        String key = iterator.next();
+                        builder.putParam(new UserDefinedData.UserDefinedParam(key, jobj.optString(key, null)));
+                    }
+                    UserDefinedData userDefinedData = builder.create();
+                    boolean res = UmqaClient.setUserDefinedData(userDefinedData);
+                    Message msg = new Message();
+                    Bundle bd = new Bundle();
+                    StringBuilder sb = new StringBuilder(String.format("[%s]: set user defined data -> %b", dateFormat.format(
+                            new Date(System.currentTimeMillis())), res));
+                    sb.append("\n\t\t");
+                    sb.append(userDefinedData.toString());
+                    bd.putString("msg", sb.toString());
+                    msg.setData(bd);
+                    getHandler().sendMessage(msg);
+                } catch (JSONException | UCParamVerifyException e) {
+                    e.printStackTrace();
+                }
+                
+                return;
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+    
+    @Override
     public void onRegister(UCSdkStatus status) {
-        JLog.I(TAG, "onRegister--->" + status.name());
-        Toast.makeText(this, status.name(), Toast.LENGTH_SHORT).show();
+        JLog.I(TAG, "onRegister---> " + status.name());
+        Message msg = new Message();
+        Bundle bd = new Bundle();
+        bd.putString("msg", String.format("[%s]: onRegister -> %s", dateFormat.format(
+                new Date(System.currentTimeMillis())), status.name()));
+        msg.setData(bd);
+        getHandler().sendMessage(msg);
     }
     
     @Override
     public void onNetworkStatusChanged(UCNetworkInfo networkInfo) {
-        JLog.I(TAG, "onNetworkStatusChanged--->" + networkInfo.toString());
-        Toast.makeText(this, networkInfo.toString(), Toast.LENGTH_SHORT).show();
+        JLog.I(TAG, "onNetworkStatusChanged---> " + networkInfo.toString());
+        Message msg = new Message();
+        Bundle bd = new Bundle();
+        bd.putString("msg", String.format("[%s]: net change -> \n\t\t%s", dateFormat.format(
+                new Date(System.currentTimeMillis())), networkInfo.toString()));
+        msg.setData(bd);
+        getHandler().sendMessage(msg);
+    }
+    
+    private Long firstClickBack = new Long(0);
+    private Timer timer = new Timer("click to quit", false);
+    
+    private class ClickTask extends TimerTask {
+        @Override
+        public void run() {
+            synchronized (firstClickBack) {
+                firstClickBack = 0l;
+            }
+        }
+    }
+    
+    @Override
+    public void onBackPressed() {
+        synchronized (firstClickBack) {
+            if (firstClickBack.longValue() == 0l) {
+                firstClickBack = SystemClock.elapsedRealtime();
+                Toast.makeText(this, "Click again to quit", Toast.LENGTH_SHORT).show();
+                timer.schedule(new ClickTask(), 1500);
+                return;
+            }
+        }
+        
+        super.onBackPressed();
     }
 }

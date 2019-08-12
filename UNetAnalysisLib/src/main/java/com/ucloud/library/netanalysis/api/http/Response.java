@@ -1,17 +1,5 @@
 package com.ucloud.library.netanalysis.api.http;
 
-import com.ucloud.library.netanalysis.exception.UCHttpException;
-import com.ucloud.library.netanalysis.parser.JsonDeserializer;
-import com.ucloud.library.netanalysis.utils.BaseUtil;
-import com.ucloud.library.netanalysis.utils.JLog;
-
-import org.json.JSONException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 

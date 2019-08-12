@@ -30,8 +30,8 @@ import javax.crypto.NoSuchPaddingException;
  * E-mail: joshua.yin@ucloud.cn
  */
 public class Encryptor {
-    public static final String TAG = "Encryptor";
-    public static final String RSA = "RSA";
+    protected static final String TAG = "Encryptor";
+    protected static final String RSA = "RSA";
     
     /**
      * RSA 公钥加密
@@ -71,7 +71,7 @@ public class Encryptor {
         
         StringReader sr = new StringReader(key);
         BufferedReader br = new BufferedReader(sr);
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
         try {
             String tmp;
             while ((tmp = br.readLine()) != null) {
@@ -86,9 +86,8 @@ public class Encryptor {
             JLog.E(TAG, "filterRsaKey occur error: " + e.getMessage());
         } finally {
             BaseUtil.closeAllCloseable(br, sr);
-            
-            return res.toString();
         }
+        return res.toString();
     }
     
     /**
@@ -103,8 +102,7 @@ public class Encryptor {
             InvalidKeySpecException {
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance(RSA);
-        PublicKey publicKey = keyFactory.generatePublic(keySpec);
-        return publicKey;
+        return keyFactory.generatePublic(keySpec);
     }
     
     /**
@@ -122,15 +120,16 @@ public class Encryptor {
         BigInteger bigIntPrivateExponent = new BigInteger(publicExponent);
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(bigIntModulus, bigIntPrivateExponent);
         KeyFactory keyFactory = KeyFactory.getInstance(RSA);
-        PublicKey publicKey = keyFactory.generatePublic(keySpec);
-        return publicKey;
+        return keyFactory.generatePublic(keySpec);
     }
     
     /**
      * 从字符串中加载公钥
      *
      * @param publicKeyStr 公钥数据字符串
-     * @throws Exception 加载公钥时产生的异常
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
      */
     public static PublicKey getPublicKey(String publicKeyStr) throws NoSuchAlgorithmException, InvalidKeySpecException {
         byte[] buffer = Base64.decode(publicKeyStr, Base64.DEFAULT);
@@ -141,7 +140,10 @@ public class Encryptor {
      * 从文件中输入流中加载公钥
      *
      * @param in 公钥输入流
-     * @throws Exception 加载公钥时产生的异常
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
      */
     public static PublicKey getPublicKey(InputStream in) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         try {
@@ -161,8 +163,7 @@ public class Encryptor {
         byte[] keyBytes = Base64.decode(privateKeyStr, Base64.DEFAULT);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance(RSA);
-        PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
-        return privateKey;
+        return keyFactory.generatePrivate(keySpec);
     }
     
     /**
@@ -174,15 +175,16 @@ public class Encryptor {
      */
     private static String readKey(InputStream in) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
-        String readLine = null;
+        String readLine;
         StringBuilder sb = new StringBuilder();
         while ((readLine = br.readLine()) != null) {
-            if (readLine.charAt(0) == '-') {
+            if (readLine.startsWith("-BEGIN"))
                 continue;
-            } else {
-                sb.append(readLine);
-                sb.append('\r');
-            }
+            if (readLine.startsWith("-END"))
+                continue;
+            
+            sb.append(readLine);
+            sb.append('\r');
         }
         
         return sb.toString();

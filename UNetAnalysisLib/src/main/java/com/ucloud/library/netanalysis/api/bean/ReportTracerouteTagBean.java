@@ -22,7 +22,7 @@ public class ReportTracerouteTagBean extends ReportTagBean {
     }
     
     protected String makeReportString() {
-        StringBuffer sb = new StringBuffer(super.makeReportString());
+        StringBuilder sb = new StringBuilder(super.makeReportString());
         sb.append(String.format(",dst_ip=%s", (dstIp == null ? "" : dstIp)));
         return sb.toString();
     }

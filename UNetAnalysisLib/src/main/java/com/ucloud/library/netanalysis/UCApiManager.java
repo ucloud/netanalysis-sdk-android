@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.Base64;
 
+import com.ucloud.library.netanalysis.api.bean.UCApiBaseRequestBean;
+import com.ucloud.library.netanalysis.api.bean.SdkStatus;
 import com.ucloud.library.netanalysis.api.http.HttpMethod;
 import com.ucloud.library.netanalysis.api.http.Request;
 import com.ucloud.library.netanalysis.api.http.Response;
@@ -37,12 +39,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,59 +62,78 @@ final class UCApiManager {
     
     private final String KEY_SP_UUID = "uuid";
     
-    private Context context;
-    private static volatile UCApiManager mInstance = null;
-    private WeakReference<SharedPreferences> weakSharedPreferences;
+    private final String packageName;
+    private SharedPreferences sharedPreferences;
     
     private UCHttpClient httpClient;
     private UCHttpsClient httpsClient;
     
-    private String appKey;
-    private String appSecret;
+    private final String appKey;
+    private final PublicKey appSecret;
     private String uuid;
     
-    private UCApiManager(Context context, String appKey, String appSecret) {
-        this.context = context;
+    UCApiManager(Context context, String appKey, PublicKey appSecret) {
+        this.packageName = context.getPackageName();
         this.appKey = appKey;
         this.appSecret = appSecret;
         
-        new Thread() {
-            @Override
-            public void run() {
-                prepareUuid();
-            }
-        }.start();
+        prepareUuid(context);
+        
         httpClient = new UCHttpClient();
         httpsClient = new UCHttpsClient();
     }
     
-    protected synchronized static UCApiManager create(Context context, String appKey, String appSecret) {
-        if (mInstance == null) {
-            mInstance = new UCApiManager(context, appKey, appSecret);
+    private class PrepareUuidThread extends Thread {
+        private Context context;
+        
+        public PrepareUuidThread(Context context) {
+            super("prepare-uuid");
+            this.context = context;
         }
         
-        return mInstance;
-    }
-    
-    protected static UCApiManager getApiManager() {
-        return mInstance;
-    }
-    
-    private void prepareUuid() {
-        SharedPreferences sharedPreferences = getSharedPreferences();
-        uuid = sharedPreferences.getString(KEY_SP_UUID, null);
-        if (TextUtils.isEmpty(uuid)) {
-            uuid = UUID.randomUUID().toString().toUpperCase();
-            sharedPreferences.edit().putString(KEY_SP_UUID, uuid).apply();
+        @Override
+        public void run() {
+            sharedPreferences = context.getSharedPreferences("umqa-sdk", Context.MODE_PRIVATE);
+            uuid = sharedPreferences.getString(KEY_SP_UUID, null);
+            if (TextUtils.isEmpty(uuid)) {
+                uuid = UUID.randomUUID().toString().toUpperCase();
+                sharedPreferences.edit().putString(KEY_SP_UUID, uuid).apply();
+            }
         }
     }
     
-    private SharedPreferences getSharedPreferences() {
-        if (weakSharedPreferences == null || weakSharedPreferences.get() == null) {
-            weakSharedPreferences = new WeakReference<>(context.getSharedPreferences("umqa-sdk", Context.MODE_PRIVATE));
-        }
-        
-        return weakSharedPreferences.get();
+    private void prepareUuid(Context context) {
+        new PrepareUuidThread(context).start();
+    }
+    
+    Response<UCApiResponseBean<SdkStatus>> apiGetSdkStatus() throws UCHttpException {
+        UCApiBaseRequestBean requestBean = new UCApiBaseRequestBean(appKey);
+    
+        UCHttpClient client = BuildConfig.UCLOUD_API.startsWith("https") ? httpsClient : httpClient;
+        return client.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API, HttpMethod.POST)
+                .path("/api/iplist/getsdkstatus/")
+                .body(requestBean)
+                .build(), new JsonDeserializer<UCApiResponseBean<SdkStatus>>() {
+            @Override
+            public UCApiResponseBean<SdkStatus> fromJson(String json) throws JSONException {
+                UCApiResponseBean<SdkStatus> response = new UCApiResponseBean<>();
+                JSONObject jObj = new JSONObject(json);
+                JSONObject meta = jObj.optJSONObject("meta");
+                if (meta != null) {
+                    UCApiResponseBean.MetaBean metaBean = new UCApiResponseBean.MetaBean();
+                    metaBean.setCode(meta.getInt("code"));
+                    metaBean.setError(meta.optString("error", ""));
+                    response.setMeta(metaBean);
+                }
+                JSONObject data = jObj.optJSONObject("data");
+                if (data != null) {
+                    SdkStatus status = new SdkStatus();
+                    status.setEnabled(data.optInt("enabled", 0));
+                    response.setData(status);
+                }
+                return response;
+            }
+        });
     }
     
     /**
@@ -124,7 +143,9 @@ final class UCApiManager {
      * @throws UCHttpException
      */
     Response<PublicIpBean> apiGetPublicIpInfo() throws UCHttpException {
-        return httpsClient.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API_IPIP, HttpMethod.GET)
+        UCHttpClient client = BuildConfig.UCLOUD_API_IPIP.startsWith("https") ? httpsClient : httpClient;
+        return client.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API_IPIP, HttpMethod.GET)
+                .path("/v1/ipip")
                 .build(), new JsonDeserializer<PublicIpBean>() {
             @Override
             public PublicIpBean fromJson(String json) throws JSONException {
@@ -169,8 +190,10 @@ final class UCApiManager {
             requestBean.setLongitude(ipInfoBean.getLongitude());
             requestBean.setLatitude(ipInfoBean.getLatitude());
         }
-        return httpsClient.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API_IP_LIST, HttpMethod.POST)
-                .path("iplist/getpinglist/")
+        
+        UCHttpClient client = BuildConfig.UCLOUD_API.startsWith("https") ? httpsClient : httpClient;
+        return client.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API, HttpMethod.POST)
+                .path("/api/iplist/getpinglist/")
                 .body(requestBean)
                 .build(), new JsonDeserializer<UCApiResponseBean<IpListBean>>() {
             @Override
@@ -234,19 +257,24 @@ final class UCApiManager {
      * @throws IOException
      */
     Response<UCApiResponseBean<MessageBean>> apiReportPing(String reportAddress, PingDataBean
-            pingData, int pingStatus, boolean isCustomIp, IpInfoBean srcIpInfo,
+            pingData, int pingStatus, boolean isCustomIp, IpInfoBean srcIpInfo, boolean isManmul,
                                                            UserDefinedData userDefinedData) throws UCHttpException {
-        ReportPingTagBean reportTag = new ReportPingTagBean(context.getPackageName(), pingData.getDst_ip(), pingData.getTTL());
+        if (TextUtils.isEmpty(reportAddress))
+            throw new UCHttpException("URL is empty!");
+        
+        ReportPingTagBean reportTag = new ReportPingTagBean(packageName, pingData.getDst_ip(), pingData.getTTL());
         reportTag.setCus(isCustomIp);
         ReportPingBean report = new ReportPingBean(appKey, pingData, pingStatus,
                 reportTag, srcIpInfo, userDefinedData);
         report.setUuid(uuid);
+        report.setTrigger(isManmul ? 1 : 0);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
             return null;
         
-        return httpClient.execute(new Request.RequestBuilder<JsonSerializable>(reportAddress, HttpMethod.POST)
+        UCHttpClient client = reportAddress.startsWith("https") ? httpsClient : httpClient;
+        return client.execute(new Request.RequestBuilder<JsonSerializable>(reportAddress, HttpMethod.POST)
                 .body(reportEncryptBean)
                 .build(), new JsonDeserializer<UCApiResponseBean<MessageBean>>() {
             @Override
@@ -282,20 +310,26 @@ final class UCApiManager {
      * @return response返回  {@link UCApiResponseBean}<{@link MessageBean}>
      * @throws IOException
      */
-    Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData, boolean isCustomIp,
-                                                                 IpInfoBean srcIpInfo, UserDefinedData userDefinedData) throws UCHttpException {
-        ReportTracerouteTagBean reportTag = new ReportTracerouteTagBean(context.getPackageName(), tracerouteData.getDst_ip());
+    Response<UCApiResponseBean<MessageBean>> apiReportTraceroute(String reportAddress, TracerouteDataBean tracerouteData,
+                                                                 boolean isCustomIp, IpInfoBean srcIpInfo,
+                                                                 boolean isManmul, UserDefinedData userDefinedData) throws UCHttpException {
+        if (TextUtils.isEmpty(reportAddress))
+            throw new UCHttpException("URL is empty!");
+        
+        ReportTracerouteTagBean reportTag = new ReportTracerouteTagBean(packageName, tracerouteData.getDst_ip());
         reportTag.setCus(isCustomIp);
         ReportTracerouteBean report = new ReportTracerouteBean(appKey, tracerouteData,
                 reportTag
                 , srcIpInfo, userDefinedData);
         report.setUuid(uuid);
+        report.setTrigger(isManmul ? 1 : 0);
         
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
             return null;
-        
-        return httpClient.execute(new Request.RequestBuilder<JsonSerializable>(reportAddress, HttpMethod.POST)
+    
+        UCHttpClient client = reportAddress.startsWith("https") ? httpsClient : httpClient;
+        return client.execute(new Request.RequestBuilder<JsonSerializable>(reportAddress, HttpMethod.POST)
                 .body(reportEncryptBean)
                 .build(), new JsonDeserializer<UCApiResponseBean<MessageBean>>() {
             @Override
@@ -342,7 +376,7 @@ final class UCApiManager {
             reportBean.setUserDefinedStr(TextUtils.isEmpty(oriStrUserDefined) ? "" : encryptRSA(oriStrUserDefined, appSecret));
             encryptBean.setData(Base64.encodeToString(reportBean.toString().getBytes(Charset.forName("UTF-8")), Base64.DEFAULT));
             return encryptBean;
-        } catch (NoSuchPaddingException | InvalidKeySpecException | NoSuchAlgorithmException
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException
                 | IllegalBlockSizeException | InvalidKeyException | BadPaddingException e) {
             JLog.D(TAG, "encrypt report data error: " + e.getMessage());
         }
@@ -350,11 +384,9 @@ final class UCApiManager {
         return null;
     }
     
-    private String encryptRSA(String oriData, String key) throws
-            InvalidKeySpecException, NoSuchAlgorithmException,
+    private String encryptRSA(String oriData, PublicKey publicKey) throws NoSuchAlgorithmException,
             IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchPaddingException {
         byte[] srcData = oriData.getBytes(Charset.forName("UTF-8"));
-        PublicKey publicKey = Encryptor.getPublicKey(key);
         byte[] cryptArr = null;
         int len = srcData.length;
         for (int i = 0, count = (int) Math.ceil(len * 1.f / (RSA_CRYPT_SRC_LIMIT - 11)); i < count; i++) {

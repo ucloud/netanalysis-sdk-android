@@ -128,7 +128,7 @@ public class TracerouteNodeResult extends UNetCommandResult {
         try {
             json.put("hop", hop);
             json.put("routeIp", routeIp);
-            json.put("delay", averageDelay());
+            json.put("avgDelay", averageDelay());
             json.put("loss", lossRate());
             json.put("isFinalRoute", isFinalRoute);
             json.put("singleNodeList", jarr);

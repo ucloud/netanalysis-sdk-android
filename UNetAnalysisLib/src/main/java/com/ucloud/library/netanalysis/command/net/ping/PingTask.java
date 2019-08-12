@@ -1,6 +1,7 @@
 package com.ucloud.library.netanalysis.command.net.ping;
 
 
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
@@ -41,22 +42,32 @@ final class PingTask extends UNetCommandTask<List<SinglePackagePingResult>> {
     }
     
     @Override
-    public List<SinglePackagePingResult> call() throws Exception {
-        return running();
-    }
-    
-    protected List<SinglePackagePingResult> running() {
+    public List<SinglePackagePingResult> run() {
         isRunning = true;
-        
+    
         String targetIp = targetAddress == null ? "" : targetAddress.getHostAddress();
         command = String.format("ping -c 1 -W 1 %s", targetIp);
-        
+    
         currentCount = 0;
-        SinglePackagePingResult res = null;
+        SinglePackagePingResult res;
         resultData = new ArrayList<>();
-        while ((isRunning = !Thread.currentThread().isInterrupted()) && (currentCount < count)) {
+        float sumElapsed = 0;
+        int countElapsed = 0;
+        while (isRunning && (currentCount < count)) {
             try {
-                res = parseSinglePackageInput(execCommand(command));
+                long start = SystemClock.elapsedRealtime();
+                String cmdRes = execCommand(command);
+                long cmdElapsed = SystemClock.elapsedRealtime() - start;
+                res = parseSinglePackageInput(cmdRes);
+    
+                // 计算 平均指令性能耗时 = 指令执行总耗时 - 实际delay值
+                float dlt = cmdElapsed - res.delay;
+                if (res.delay > 0.f && dlt > 0 && dlt < 40.f) {
+                    sumElapsed += dlt;
+                    countElapsed += 1;
+                }
+                COMMAND_ELAPSED_TIME = sumElapsed / countElapsed;
+                
                 JLog.D(TAG, String.format("[thread]:%d, [ping](%d):%s", Thread.currentThread().getId(), currentCount, res.toString()));
                 resultData.add(res);
                 if (callback != null)
