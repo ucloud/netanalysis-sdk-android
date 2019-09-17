@@ -33,7 +33,7 @@
             android:textColor="@android:color/black"
             android:textSize="16sp" />
 
-        <android.support.v7.widget.AppCompatSpinner
+        <androidx.appcompat.widget.AppCompatSpinner
             android:id="@+id/spinner_log_lv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -44,7 +44,7 @@
             android:entries="@array/log_levels" />
     </RelativeLayout>
 
-    <android.support.v7.widget.AppCompatCheckBox
+    <androidx.appcompat.widget.AppCompatCheckBox
         android:id="@+id/checkbox_auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -1,7 +1,7 @@
 package com.ucloud.library.netanalysis;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.ucloud.library.netanalysis.callback.OnSdkListener;
 import com.ucloud.library.netanalysis.module.UCNetworkInfo;

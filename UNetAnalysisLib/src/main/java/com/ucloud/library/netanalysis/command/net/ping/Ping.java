@@ -1,7 +1,7 @@
 package com.ucloud.library.netanalysis.command.net.ping;
 
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.ucloud.library.netanalysis.command.UCommandPerformer;
 import com.ucloud.library.netanalysis.command.bean.UCommandStatus;

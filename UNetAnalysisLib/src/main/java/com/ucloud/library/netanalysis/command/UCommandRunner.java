@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.command;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.ucloud.library.netanalysis.utils.JLog;
 

@@ -33,7 +33,7 @@
             android:text="Key:"
             android:textStyle="bold" />
 
-        <android.support.v7.widget.AppCompatEditText
+        <androidx.appcompat.widget.AppCompatEditText
             android:id="@+id/edit_key"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -61,7 +61,7 @@
             android:text="Val:"
             android:textStyle="bold" />
 
-        <android.support.v7.widget.AppCompatEditText
+        <androidx.appcompat.widget.AppCompatEditText
             android:id="@+id/edit_val"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
