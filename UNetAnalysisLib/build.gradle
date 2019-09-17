@@ -102,17 +102,17 @@ task clearJar(type: Delete) {
 task makeJar(dependsOn: ['clearJar', 'build', 'compileReleaseJavaWithJavac'], type: Jar) {
     //指定生成的jar名
 //    appendix = "demo"
-    baseName = "UNetAnalysisLib"
+    getArchiveBaseName().set("UNetAnalysisLib")
 //    version = "1.0.0"
 //    classifier = "release"
     //后缀名
-    extension = "jar"
+    getArchiveExtension().set("jar")
     //最终的 Jar 包名，如果没设置，默认为 [baseName]-[appendix]-[version]-[classifier].[extension]
 //    archiveName = "CCBWristBand_jd.jar"
     //需打包的资源所在的路径集
 //    from(project.zipTree("libs/依赖的第三方库"))
     //初始化资源路径集
-    from project.buildDir.absolutePath + "/intermediates/classes/release/"
+    from project.buildDir.absolutePath + "/intermediates/javac/release/classes"
     //打包到jar后的目录结构
 //    into('cn/com/jd/')
     //去除路径集下部分的资源
@@ -127,11 +127,12 @@ task makeJar(dependsOn: ['clearJar', 'build', 'compileReleaseJavaWithJavac'], ty
 
 task makeProguardJar(dependsOn: ['makeJar'], type: ProGuardTask) {
     //Android 默认的 proguard 文件
-    configuration android.getDefaultProguardFile('proguard-android.txt')
+    configuration project.android.getDefaultProguardFile('proguard-android.txt')
     //manifest 注册的组件对应的 proguard 文件
     configuration project.buildDir.absolutePath + "/intermediates/proguard-rules/release/aapt_rules.txt"
     configuration 'proguard-rules.pro'
-    String inJar = makeJar.archivePath.getAbsolutePath()
+    String inJar = makeJar.getArchiveFile().get().getAsFile().getAbsolutePath()
+    print("this is log:" + inJar)
     //输入 jar
     injars inJar
     //输出 jar
@@ -143,16 +144,20 @@ task makeProguardJar(dependsOn: ['makeJar'], type: ProGuardTask) {
             getPlugins().findPlugin(LibraryPlugin)
     if (plugin != null) {
         List<String> runtimeJarList
-        if (plugin.getMetaClass().getMetaMethod("getRuntimeJarList")) {
+        if (project.android.getMetaClass().getMetaMethod("getBootClasspath")) {
+            runtimeJarList = project.android.getBootClasspath()
+        } else if (plugin.extension.getMetaClass().getMetaMethod("getBootClasspath")) {
+            runtimeJarList = plugin.extension.getBootClasspath()
+        } else if (plugin.getMetaClass().getMetaMethod("getRuntimeJarList")) {
             runtimeJarList = plugin.getRuntimeJarList()
-        } else if (android.getMetaClass().getMetaMethod("getBootClasspath")) {
-            runtimeJarList = android.getBootClasspath()
-        } else {
+        } else if (plugin.getMetaClass().getMetaMethod("getBootClasspath")) {
             runtimeJarList = plugin.getBootClasspath()
         }
-        for (String runtimeJar : runtimeJarList) {
-            //给 proguard 添加 runtime
-            libraryjars(runtimeJar)
+        if (runtimeJarList != null) {
+            for (String runtimeJar : runtimeJarList) {
+                //给 proguard 添加 runtime
+                libraryjars(runtimeJar)
+            }
         }
     }
 }
