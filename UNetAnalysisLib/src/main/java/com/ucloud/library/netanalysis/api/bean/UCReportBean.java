@@ -114,6 +114,7 @@ public class UCReportBean extends UCApiBaseRequestBean {
             json.put("user_defined", userDefinedStr);
             json.put("uuid", uuid);
             json.put("trigger_type", trigger);
+            json.put("user_defined", userDefinedStr == null ? "" : userDefinedStr);
         } catch (JSONException e) {
             e.printStackTrace();
         }
