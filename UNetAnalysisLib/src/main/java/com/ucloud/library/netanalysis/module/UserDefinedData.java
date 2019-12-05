@@ -1,6 +1,6 @@
 package com.ucloud.library.netanalysis.module;
 
-import android.support.v4.util.ArrayMap;
+import androidx.collection.ArrayMap;
 import android.text.TextUtils;
 
 import com.ucloud.library.netanalysis.exception.UCParamVerifyException;

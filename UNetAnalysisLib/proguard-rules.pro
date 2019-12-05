@@ -20,7 +20,7 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--target 1.8
+-target 1.7
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
 -optimizationpasses 5
 -dontusemixedcaseclassnames

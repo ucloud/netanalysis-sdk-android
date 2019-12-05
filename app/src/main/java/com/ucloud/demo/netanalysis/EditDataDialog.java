@@ -3,21 +3,17 @@ package com.ucloud.demo.netanalysis;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatDialogFragment;
-import android.support.v7.widget.AppCompatCheckBox;
-import android.support.v7.widget.AppCompatEditText;
-import android.support.v7.widget.AppCompatSpinner;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDialogFragment;
+import androidx.appcompat.widget.AppCompatCheckBox;
+import androidx.appcompat.widget.AppCompatEditText;
+import androidx.appcompat.widget.AppCompatSpinner;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.CompoundButton;
 import android.widget.Toast;
 
 import com.ucloud.library.netanalysis.module.UserDefinedData;
-import com.ucloud.library.netanalysis.utils.UCConfig;
 
 /**
  * Created by joshua on 2019-08-02 16:46.
