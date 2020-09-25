@@ -28,17 +28,33 @@ import android.telephony.TelephonyManager;
  * HSPAP   3G HSPAP 比 HSDPA 快些
  */
 public enum UCNetStatus {
-    /** 无网络连接 */
+    /**
+     * 无网络连接
+     */
     NET_STATUS_NOT_REACHABLE("NOT_REACHABLE"),
-    /** WIFI网络 */
+    /**
+     * WIFI网络
+     */
     NET_STATUS_WIFI("WIFI"),
-    /** 4G网络 */
+    /**
+     * 5G网络
+     */
+    NET_STATUS_5G("5G"),
+    /**
+     * 4G网络
+     */
     NET_STATUS_4G("4G"),
-    /** 3G网络 */
+    /**
+     * 3G网络
+     */
     NET_STATUS_3G("3G"),
-    /** 2G网络 */
+    /**
+     * 2G网络
+     */
     NET_STATUS_2G("2G"),
-    /** 未知类型 */
+    /**
+     * 未知类型
+     */
     NET_STATUS_UNKNOW("UNKNOW");
     
     private String value;
@@ -80,6 +96,8 @@ public enum UCNetStatus {
             case TelephonyManager.NETWORK_TYPE_IWLAN:
             case TelephonyManager.NETWORK_TYPE_LTE:
                 return NET_STATUS_4G;
+            case TelephonyManager.NETWORK_TYPE_NR:
+                return NET_STATUS_5G;
             default:
                 String subtypeName = networkInfo.getSubtypeName();
                 if (subtypeName.equalsIgnoreCase("TD-SCDMA")

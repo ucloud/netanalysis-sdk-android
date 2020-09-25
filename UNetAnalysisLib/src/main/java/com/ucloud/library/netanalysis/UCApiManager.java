@@ -108,7 +108,7 @@ final class UCApiManager {
     
     Response<UCApiResponseBean<SdkStatus>> apiGetSdkStatus() throws UCHttpException {
         UCApiBaseRequestBean requestBean = new UCApiBaseRequestBean(appKey);
-    
+        
         UCHttpClient client = BuildConfig.UCLOUD_API.startsWith("https") ? httpsClient : httpClient;
         return client.execute(new Request.RequestBuilder<JsonSerializable>(BuildConfig.UCLOUD_API, HttpMethod.POST)
                 .path("/api/iplist/getsdkstatus/")
@@ -327,7 +327,7 @@ final class UCApiManager {
         UCReportEncryptBean reportEncryptBean = encryptReportData(report);
         if (reportEncryptBean == null)
             return null;
-    
+        
         UCHttpClient client = reportAddress.startsWith("https") ? httpsClient : httpClient;
         return client.execute(new Request.RequestBuilder<JsonSerializable>(reportAddress, HttpMethod.POST)
                 .body(reportEncryptBean)
